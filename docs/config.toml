@@ -1,0 +1,23 @@
+# The websocket guide, served at baskingspot.dev/websocket/. The theme and the
+# site build come from baskingspot-docs; the router in baskingspot/site serves
+# /websocket/...
+base_url = "https://baskingspot.dev/websocket"
+theme = "baskingspot"
+title = "websocket"
+description = "WebSocket frames and the upgrade handshake in Zig, with no IO and no allocator."
+
+generate_feeds = false
+build_search_index = false
+
+[markdown]
+insert_anchor_links = "heading"
+
+[markdown.highlighting]
+# An unknown fence language is a build error, not an unhighlighted block.
+error_on_missing_language = true
+light_theme = "github-light"
+dark_theme = "github-dark"
+
+[extra]
+repo = "baskingspot/websocket"
+api = true
