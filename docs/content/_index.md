@@ -109,9 +109,9 @@ events, so treat the payload as a stream and not as a message.
 
 The parser rejects what RFC 6455 says to reject, as `ParseError`: a reserved
 opcode, an RSV bit the negotiated extension did not claim, a control frame over
-125 bytes, a fragmented control frame, and a masked frame at a client. It does
-not reject a text payload that is not UTF-8. That is the next section's problem
-or yours.
+125 bytes or split across frames, a payload length written in a longer form than
+it needs, and a mask on the wrong side. It does not reject a text payload that is
+not UTF-8. That is the next section's problem or yours.
 
 # Messages
 

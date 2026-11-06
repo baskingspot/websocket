@@ -1,8 +1,8 @@
-//! IO-agnostic WebSocket frame parser and serializer implementing RFC 6455.
+//! WebSocket frames and the upgrade handshake in Zig, with no IO and no allocator.
 //!
-//! Zero allocations, no IO — callers provide all buffers. This is a frame-level
-//! library: it handles header parsing, payload length decoding, and masking.
-//! Fragmentation sequencing and UTF-8 validation are the caller's responsibility.
+//! Callers provide all buffers. The parser handles header parsing, payload
+//! length decoding, and masking. Fragmentation sequencing and UTF-8 validation
+//! are the caller's responsibility.
 //!
 //! ## Quick start
 //!
