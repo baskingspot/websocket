@@ -1,58 +1,116 @@
-# AGENTS.md
+# websocket: agent notes
 
-IO-agnostic WebSocket frame parser and serializer in Zig. Zero allocations, no IO, bring-your-own-buffers. Implements [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455).
+RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
+`README.md` is the user overview and `docs/content/_index.md` is the guide.
+`rfc6455.txt` is the spec, vendored.
 
 ## Architecture
 
-- `src/root.zig` — library entry point. Exports the `client` and `server` namespaces.
-- `src/client.zig` — client namespace. Re-exports client-side types (`Parser`, `FrameHandler`, `MessageWriter`) and provides masked `writeFrame`/`writeClose`/`writePing`/`writePong`.
-- `src/server.zig` — server namespace. Re-exports server-side types (`Parser`, `FrameHandler`, `MessageWriter`, `UpgradeResponse`) and provides unmasked `writeFrame`/`writeClose`/`writePing`/`writePong`.
-- `src/frame.zig` — core types (`Opcode`, `RsvBits`, `FrameHeader`, `Mask`, `Event`, `ParseError`, `WriteFrameOptions`), `BoundedBuffer`, `generateMaskKey`, and `readInt`/`writeInt` helpers.
-- `src/parse.zig` — streaming `Parser` (server/client), `MessageValidator`, and `FrameHandler` (higher-level message-oriented API).
-- `src/close.zig` — `CloseCode`, `ClosePayload`, `parseClosePayload`.
-- `src/handshake.zig` — `computeAcceptKey`, `UpgradeRequest`, `validateUpgradeRequest`, `UpgradeResponse`.
-- `src/message_writer.zig` — `MessageWriter(comptime masked: bool)` generic, instantiated as `ServerMessageWriter` (unmasked) and `ClientMessageWriter` (masked).
-- `test/echo_server.zig` — test scaffolding only. A minimal echo server for running the Autobahn conformance suite. Not part of the library.
-- `test/echo_client.zig` — test scaffolding only. A minimal echo client for running the Autobahn client conformance suite against a fuzzingserver. Supports permessage-deflate. Not part of the library.
-- `examples/blocking-echo.zig` — single-threaded blocking echo server using `std.net` and `std.Io`. Simplest possible integration.
-- `examples/blocking-client.zig` — single-threaded blocking WebSocket client using `std.net` and `std.Io`. Pairs with `blocking-echo` for a complete client/server demo.
-- `examples/http-upgrade.zig` — thread-per-connection HTTP server using `std.http.Server` with WebSocket upgrade on `/ws` and a static HTML page on `/`. Uses `@embedFile` for the HTML.
-- `examples/xev-echo.zig` — completion-based echo server using libxev's event loop with connection pooling. Most production-like example.
+- `src/root.zig` is the module entry point. It exports the `client` and
+  `server` namespaces, and nothing else. A caller picks a role, not a layer.
+- `src/server.zig` re-exports the server-side types (`Parser`, `FrameHandler`,
+  `MessageWriter`, `UpgradeRequest`, `UpgradeResponse`, the close types) and
+  writes unmasked frames.
+- `src/client.zig` re-exports the client-side types and writes masked frames.
+  `client.writeFrame` takes `[]u8` because the mask is XOR'd into the buffer it
+  was given.
+- `src/frame.zig` holds the shared types (`Opcode`, `RsvBits`, `FrameHeader`,
+  `Mask`, `MaskKey`, `Event`, `ParseError`, `WriteFrameOptions`),
+  `BoundedBuffer`, `generateMaskKey`, and the integer helpers.
+- `src/parse.zig` holds the streaming `Parser` (one generic over the role), the
+  `MessageValidator`, and `FrameHandler`.
+- `src/close.zig` holds `CloseCode`, `ClosePayload`, and `parseClosePayload`.
+- `src/handshake.zig` holds `computeAcceptKey`, `UpgradeRequest`,
+  `validateUpgradeRequest`, and `UpgradeResponse`.
+- `src/message_writer.zig` holds the `MessageWriter` generic, instantiated as
+  `ServerMessageWriter` and `ClientMessageWriter`.
+- `src/extension.zig` holds `Extension` and its `permessage-deflate`
+  configuration and header writer.
+- `test/echo_server.zig` and `test/echo_client.zig` are scaffolding for the
+  Autobahn suite. They are not part of the library, and they link zlib for
+  permessage-deflate.
+- `examples/` holds four complete programs. `xev-echo.zig` is the only one that
+  needs the lazy libxev dependency.
+- `.agents/skills/rfc6455.md` is a quick reference to the vendored spec, and
+  `CLAUDE.md` is a symlink to this file.
 
-## Design Decisions
+## Design decisions
 
-- **No UTF-8 validation.** Text frame payloads are treated as opaque bytes. UTF-8 validation is the caller's responsibility. The echo server does its own validation to satisfy Autobahn.
-- **Permessage-deflate.** The library supports the `permessage-deflate` extension (RFC 7692) via the `Extension` type and the `compressed` flag on `WriteFrameOptions`. The echo server negotiates compression for the Autobahn conformance suite.
-- **No handshake HTTP parsing.** The library provides `computeAcceptKey` for the `Sec-WebSocket-Accept` header, but HTTP upgrade parsing is the caller's responsibility.
+- No UTF-8 validation. Text payloads are opaque bytes; the echo server
+  validates so that Autobahn's 6.* cases pass. Adding validation to the parser
+  would make a frame library decide what a message means.
+- `permessage-deflate` is negotiation, not compression. The library sets RSV1,
+  writes the extension header, and reports `compressed` on `.data_end` and
+  `WriteFrameOptions`. It never calls a codec.
+- No HTTP parsing. `UpgradeRequest` is two fields, and the caller's server owns
+  the request. `baskingspot/http` is the pairing: `h1.ServerConn.switchProtocols`
+  ends its own parsing at the 101 and `remainingInput()` hands over the bytes.
+  The two packages do not depend on each other, and should not: the seam is the
+  bytes.
+- Role is a namespace, not a runtime flag. A server unmasks inbound frames and
+  writes unmasked ones, a client does the reverse, and the compiler enforces
+  which is which through two sets of functions with two signatures.
 
-## Development
+## Environment
 
-Requires [Nix](https://nixos.org/) with flakes. All tools come from the devshell — do not install anything globally.
-
-```
-nix develop
-```
+- Zig 0.16 from the flake, through `baskingspot/nix`'s `zig."0.16"` module.
+  Read the `zig-016` skill before writing Zig here.
+- The flake is the environment. A missing tool goes in `flake.nix`; do not
+  install it globally.
+- The Autobahn runtime is Python 2 on PyPy, built from a pinned source checkout
+  and the hashed sdist lock in `test/autobahn/requirements.txt`. Its
+  `cryptography` sdist refuses OpenSSL 3, and nixpkgs removed `openssl_1_1` on
+  2026-09-17, so the flake builds 1.1.1w itself for that one build. Do not
+  widen its use.
+- `just autobahn-setup` installs into `.autobahn/` and stamps it. It is
+  idempotent, and every conformance recipe depends on it.
 
 ## Tasks
 
-All tasks are in the `justfile`:
-
 ```
-just test             # Run unit tests
-just fmt              # Format all Zig source files
-just fmt-check        # Check formatting without modifying files
-just lint             # Run ziglint
-just check            # Format check and lint
-just examples         # Build all examples
-just autobahn-setup   # Install the native Autobahn TestSuite runtime
-just conformance             # Run the fast native Autobahn suite for local iteration
-just conformance-full        # Run the full native Autobahn suite
-just conformance-client      # Run the fast Autobahn client conformance suite
-just conformance-client-full # Run the full Autobahn client conformance suite
-just conformance-xev         # Run the fast Autobahn suite against xev echo server
-just ci               # All checks: format, lint, test, full conformance
-just report           # Serve the Autobahn HTML report on localhost:8080
+just test                    # unit tests
+just fmt                     # zig fmt, nix fmt, oxfmt, just --fmt
+just lint                    # the checks in `just fmt` plus ziglint and the house rules
+just examples                # build every example
+just conformance             # the fast Autobahn profile against the echo server
+just conformance-full        # every Autobahn case, several minutes
+just conformance-client      # the fast profile against the echo client
+just conformance-xev         # the fast profile against the libxev example
+just report                  # serve the last report on 127.0.0.1:8080
+just doc                     # build the site into zig-out/site/websocket
+just ci                      # what CI runs
 ```
-## RFC Reference
 
-The full RFC 6455 text is at `rfc6455.txt` in the project root. A quick-reference skill is at `.agents/skills/rfc6455.md`.
+`just ci` runs the fast profile, not `conformance-full`. The full profile takes
+over ten minutes and grows to about two gigabytes under pypy, so it runs by
+hand before a release.
+
+The echo server binds 127.0.0.1:9002 and does not set `SO_REUSEADDR`, so a
+conformance run started within a minute of the previous one fails with
+`AddressInUse`. Wait, or change the port in `build.zig`.
+
+## Docs
+
+- The guide is `docs/content/_index.md` and the API page is `docs/data/api.json`,
+  written by `docgen` in the `api` recipe. The theme comes from
+  `baskingspot/nix`; do not copy templates or CSS into this repo.
+- Human documents are the README, the guide, `CHANGELOG.md`, and anything in
+  `docs/`. Agent material goes in `docs/slop/`, which no human document links.
+  There is none yet.
+- The tagline lives in five places and they move together: the README, the
+  guide's first sentence, the first lines of `src/root.zig`, `description` in
+  `docs/config.toml`, and the GitHub About text.
+
+## Rules
+
+- Commit messages are one line, `area: summary`, and every commit is signed.
+  Do not rewrite pushed history.
+- Never `git add -A` or `git add .`. Stage by path.
+- Gate commands on their exit codes, and claim only what you ran.
+- A new frame-level behavior gets a hostile-input test, and one that pins the
+  RFC section it enforces.
+
+## RFC reference
+
+The full RFC 6455 text is `rfc6455.txt`. The quick reference is
+`.agents/skills/rfc6455.md`.
