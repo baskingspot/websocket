@@ -17,8 +17,8 @@ pub const MaskKey = [4]u8;
 /// a randomSecure syscall).
 pub fn generateMaskKey() MaskKey {
     var key: MaskKey = undefined;
-    const io = std.Io.Threaded.global_single_threaded.io();
-    std.Io.randomSecure(io, &key) catch unreachable; // getrandom cannot fail for 4 bytes
+    const io = Io.Threaded.global_single_threaded.io();
+    io.randomSecure(&key) catch unreachable; // getrandom cannot fail for 4 bytes
     return key;
 }
 
@@ -161,6 +161,7 @@ pub const RsvBits = packed struct(u3) {
 };
 
 /// Decoded WebSocket frame header (RFC 6455 Section 5.2).
+// ast-grep-ignore: public-struct-field-default -- one-frame message defaults
 pub const FrameHeader = struct {
     /// True if this is the final fragment in a message.
     fin: bool = true,
@@ -303,6 +304,7 @@ pub const Mask = struct {
 };
 
 /// Options for `writeFrame` and `MessageWriter.init`.
+// ast-grep-ignore: public-struct-field-default -- options bag; uncompressed is the rule
 pub const WriteFrameOptions = struct {
     /// Frame opcode. Only non-reserved opcodes are valid.
     opcode: Opcode,

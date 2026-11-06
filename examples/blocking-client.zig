@@ -17,7 +17,7 @@ const ws = @import("websocket").client;
 pub fn main(init: std.process.Init.Minimal) !void {
     // Single-threaded blocking I/O; entropy and networking both come from
     // this Io instance (std.crypto.random was removed in 0.16).
-    var threaded: std.Io.Threaded = .init_single_threaded;
+    var threaded: Io.Threaded = .init_single_threaded;
     defer threaded.deinit();
     const io = threaded.io();
 
@@ -34,7 +34,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     // --- Client Handshake ---
     var key_raw: [16]u8 = undefined;
-    try std.Io.randomSecure(io, &key_raw);
+    try Io.randomSecure(io, &key_raw);
     var key_b64: [24]u8 = undefined;
     _ = std.base64.standard.Encoder.encode(&key_b64, &key_raw);
 
@@ -138,8 +138,8 @@ fn extractHeader(request: []const u8, needle: []const u8) ?[]const u8 {
     return null;
 }
 
-fn tcpConnect(io: std.Io, port: u16) !std.Io.net.Stream {
-    const address: std.Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
+fn tcpConnect(io: Io, port: u16) !Io.net.Stream {
+    const address: Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
     return address.connect(io, .{ .mode = .stream });
 }
 

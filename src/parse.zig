@@ -317,6 +317,7 @@ fn FrameHandler(comptime is_server: bool) type {
             /// More input bytes are needed.
             need_more,
 
+            // ast-grep-ignore: public-struct-field-default -- compression is the exception
             pub const DataEnd = struct {
                 /// The opcode from the first frame of the message (`.text` or `.binary`).
                 opcode: Opcode,

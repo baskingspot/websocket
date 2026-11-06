@@ -70,7 +70,7 @@ pub fn writeFrame(
     options: WriteFrameOptions,
 ) Io.Writer.Error!void {
     assert(!options.opcode.isReserved());
-    assert(!options.opcode.isControl() or payload.len <= frame.max_control_payload_len);
+    assert(!options.opcode.isControl() or payload.len <= max_control_payload_len);
     assert(!options.opcode.isControl() or !options.compressed);
     const rsv: RsvBits = if (options.compressed) .permessage_deflate else .empty;
     const header: FrameHeader.Buffer = .init(.{

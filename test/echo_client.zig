@@ -8,8 +8,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
-const Stream = std.Io.net.Stream;
-const Address = std.Io.net.IpAddress;
+const Stream = Io.net.Stream;
+const Address = Io.net.IpAddress;
 const mem = std.mem;
 const print = std.debug.print;
 
@@ -194,7 +194,7 @@ fn doHandshake(
     offer_deflate: bool,
 ) !HandshakeResult {
     var key_raw: [16]u8 = undefined;
-    try std.Io.randomSecure(io, &key_raw);
+    try Io.randomSecure(io, &key_raw);
     var key_b64: [24]u8 = undefined;
     _ = std.base64.standard.Encoder.encode(&key_b64, &key_raw);
 

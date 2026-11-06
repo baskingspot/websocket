@@ -23,14 +23,14 @@ pub fn main(init: std.process.Init.Minimal) !void {
     defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
-    // std.Io.net requires an Io instance; this example is single-threaded
+    // Io.net requires an Io instance; this example is single-threaded
     // blocking I/O, so a plain Io.Threaded is the honest implementation.
     var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
     defer threaded.deinit();
     const io = threaded.io();
 
     const port = parsePort(init.args);
-    const address: std.Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
+    const address: Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
     var server = try address.listen(io, .{});
     defer server.deinit(io);
 
@@ -49,7 +49,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     }
 }
 
-fn handleConnection(gpa: Allocator, io: Io, stream: std.Io.net.Stream) !void {
+fn handleConnection(gpa: Allocator, io: Io, stream: Io.net.Stream) !void {
     defer stream.close(io);
 
     // Wrap the raw TCP stream with buffered reader/writer.

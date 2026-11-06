@@ -32,12 +32,12 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
     // One Io.Threaded shared across the accept loop and connection threads;
     // Threaded is the threadsafe implementation.
-    var threaded: std.Io.Threaded = .init(allocator, .{ .environ = init.environ });
+    var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
     defer threaded.deinit();
     const io = threaded.io();
 
     const port = parsePort(init.args);
-    const address: std.Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
+    const address: Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
     var listener = try address.listen(io, .{});
     defer listener.deinit(io);
 
@@ -65,7 +65,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
 
 /// Thread entry point — handles a connection and ensures the stream is
 /// closed when done, even if an error occurs.
-fn handleConnectionThread(gpa: Allocator, io: std.Io, stream: std.Io.net.Stream) void {
+fn handleConnectionThread(gpa: Allocator, io: Io, stream: Io.net.Stream) void {
     defer stream.close(io);
     handleConnection(gpa, io, stream) catch |err| {
         print("connection error: {}\n", .{err});
@@ -76,7 +76,7 @@ fn handleConnectionThread(gpa: Allocator, io: std.Io, stream: std.Io.net.Stream)
 /// requests and dispatch based on the path. The server supports HTTP
 /// keep-alive, so multiple requests can be served on the same connection
 /// — until one of them upgrades to WebSocket.
-fn handleConnection(gpa: Allocator, io: std.Io, stream: std.Io.net.Stream) !void {
+fn handleConnection(gpa: Allocator, io: Io, stream: Io.net.Stream) !void {
     // Wrap the TCP stream with buffered reader/writer.
     var read_buf: [8192]u8 = undefined;
     var write_buf: [8192]u8 = undefined;

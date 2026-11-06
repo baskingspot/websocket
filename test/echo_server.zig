@@ -13,8 +13,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;
-const Stream = std.Io.net.Stream;
-const Address = std.Io.net.IpAddress;
+const Stream = Io.net.Stream;
+const Address = Io.net.IpAddress;
 const mem = std.mem;
 const print = std.debug.print;
 
@@ -28,7 +28,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
-    var threaded: std.Io.Threaded = .init(allocator, .{ .environ = init.environ });
+    var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
     defer threaded.deinit();
     const io = threaded.io();
 
@@ -55,7 +55,7 @@ const HandshakeResult = struct {
     deflate: ?DeflateConfig,
 };
 
-fn handleConnection(allocator: Allocator, io: std.Io, stream: Stream) !void {
+fn handleConnection(allocator: Allocator, io: Io, stream: Stream) !void {
     defer stream.close(io);
 
     var read_buf: [8192]u8 = undefined;
