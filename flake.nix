@@ -85,6 +85,7 @@
             packages = with pkgs; [
               coreutils
               libffi
+              nufmt
               nushell
               openssl_1_1_1w
               pkg-config
