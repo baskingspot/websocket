@@ -1,165 +1,82 @@
-# websocket-zig
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/static/logo-dark.svg">
+    <img src="docs/static/logo.svg" alt="websocket" height="48">
+  </picture>
+</h1>
 
-A streaming WebSocket parser and serializer for Zig. In the same spirit as [picohttpparser](https://github.com/h2o/picohttpparser) or [nghttp2](https://nghttp2.org/), this is a bring-your-own-IO library: you feed it bytes, it gives you parsed frames. It never touches a socket, never allocates, and has no opinion about your event loop.
+WebSocket frames and the upgrade handshake in Zig, with no IO and no allocator.
 
-Implements [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455). Passes the [Autobahn test suite](https://github.com/crossbario/autobahn-testsuite). Requires Zig 0.15.
+Zig's `std.http.Server` can answer a request and hand the connection to another
+protocol, and nothing in `std` reads a WebSocket frame. A WebSocket library
+usually arrives with a socket, a thread, and an allocator attached. This is the
+frame layer only: you read the bytes, hand them over, and get frames back.
+
+`Parser.feed` takes the bytes you already read and returns one event with the
+count it consumed. `FrameHandler` sits above it and reassembles fragments into
+messages. The state is a 14-byte header in the parser and 125 bytes of control
+payload in the handler, and nothing else.
+
+## What is in it
+
+- [Frames](https://baskingspot.dev/websocket/#frames): `Parser.feed` returns `.frame_header`, `.payload`, `.frame_end`, or `.need_more`, unmasks server-side payloads in the buffer you gave it, and keeps 14 bytes of header state.
+- [Messages](https://baskingspot.dev/websocket/#messages): `FrameHandler.feed` reassembles fragments and returns `.data`, `.data_end`, `.ping`, `.pong`, or `.close`.
+- [Writing](https://baskingspot.dev/websocket/#writing): `writeFrame` writes one frame, `MessageWriter` streams one message across several, and `FrameHeader.Buffer` serializes the header alone for a scatter-gather write.
+- [Close](https://baskingspot.dev/websocket/#close): `parseClosePayload` returns the `CloseCode` and the reason bytes, and rejects the codes RFC 6455 forbids on the wire.
+- [Extensions](https://baskingspot.dev/websocket/#extensions): `Extension` negotiates `permessage-deflate`, claims the RSV1 bit, and marks a written frame `.compressed`.
+- [The upgrade](https://baskingspot.dev/websocket/#the-upgrade): `computeAcceptKey`, `validateUpgradeRequest`, and `UpgradeResponse` cover the WebSocket half of the 101, and the HTTP half is the server's.
+- [Conformance](https://baskingspot.dev/websocket/#conformance): the Autobahn TestSuite runs against the echo server and the echo client, and the fast profile is a CI gate.
+
+Not implemented:
+
+- UTF-8 validation. A `text` message reaches your handler as the bytes arrived, and Autobahn's 6.* cases pass because the echo server validates before it echoes.
+- HTTP parsing. `UpgradeRequest` carries `key` and `version` and nothing else; the rest of the request stays with your server.
+- Deflate. `permessage-deflate` is negotiation and the RSV1 bit, and inflating a `.compressed` payload is the caller's library.
+- Subprotocol negotiation. `Sec-WebSocket-Protocol` is yours to read and write.
+- Any socket, thread, timer, or allocator.
 
 ## Install
 
-```
-zig fetch --save git+https://github.com/mattrobenolt/websocket-zig
+```sh
+zig fetch --save git+https://github.com/baskingspot/websocket
 ```
 
+Add the module in `build.zig`:
+
 ```zig
-// build.zig
-const websocket = b.dependency("websocket", .{ .target = target });
+const websocket = b.dependency("websocket", .{ .target = target, .optimize = optimize });
 exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
-## Parsing
+The package exports `server` and `client` namespaces, so a program on one side
+of a connection imports one and switches when it is on the other. `websocket`
+builds with Zig 0.16 only.
 
-### Frame Handler (recommended)
+## Documentation
 
-Import the role namespace you need. The examples below use `server`; switch to `.client` when you are connecting to a server instead of accepting a client.
+- The [guide](https://baskingspot.dev/websocket/) says which piece to use at each step of a connection, with the symbols a caller needs.
+- The [API reference](https://baskingspot.dev/websocket/api/) documents every symbol.
+- [`examples/`](examples/) holds four complete programs: a blocking echo server, its client, an HTTP upgrade, and a libxev server.
 
-```zig
-const ws = @import("websocket").server;
+## Work on it
 
-var handler: ws.FrameHandler = .init(.{});
-
-while (true) {
-    const result = try handler.feed(buf);
-    buf = buf[result.consumed..];
-
-    switch (result.message) {
-        .data => |payload| {
-            // Accumulate message payload.
-        },
-        .data_end => |end| {
-            // Complete message received. end.opcode is .text or .binary.
-        },
-        .ping => |payload| try ws.writePong(writer, payload),
-        .pong => {},
-        .close => |payload| {
-            try ws.writeFrame(writer, payload, .{ .opcode = .close });
-            return;
-        },
-        .need_more => break,
-    }
-}
+```sh
+nix develop
+just ci
 ```
 
-### Low-Level Parser
-
-`server.Parser` / `client.Parser` gives raw frame-level events for full control. The frame handler above is built on top of this:
-
-```zig
-const ws = @import("websocket").server;
-
-var parser: ws.Parser = .init(.{});
-
-while (true) {
-    const result = try parser.feed(buf);
-    buf = buf[result.consumed..];
-
-    switch (result.event) {
-        .frame_header => |hdr| {
-            // hdr.fin, hdr.opcode, hdr.payload_len, hdr.mask_key
-        },
-        .payload => |data| {
-            // Slice into your input buffer, already unmasked.
-        },
-        .frame_end => {},
-        .need_more => break,
-    }
-}
-```
-
-## Serialization
-
-```zig
-const ws = @import("websocket").server;
-
-// Complete frame in one call.
-try ws.writeFrame(writer, payload, .{ .opcode = .text });
-
-// Close with a status code.
-try ws.writeClose(writer, .normal);
-
-// Stream a large message across multiple frames.
-var msg: ws.MessageWriter = .init(writer, .{ .opcode = .text });
-try msg.writeChunk(part1);
-try msg.writeChunk(part2);
-try msg.finish(part3);
-
-// Serialize just the header for scatter-gather IO.
-const header: ws.FrameHeader.Buffer = .init(.{
-    .opcode = .text,
-    .payload_len = payload.len,
-});
-```
-
-## Masking
-
-```zig
-const ws = @import("websocket").client;
-
-var mask: ws.Mask = .init(mask_key);
-mask.apply(chunk1);
-mask.apply(chunk2);
-// XOR is its own inverse: apply the same mask to unmask.
-```
-
-## Handshake
-
-Computes the `Sec-WebSocket-Accept` value and can generate the full HTTP 101 response. HTTP parsing is your responsibility.
-
-```zig
-const ws = @import("websocket").server;
-
-// Build the full HTTP 101 response.
-const resp: ws.UpgradeResponse = .init(.{ .key = client_key });
-try resp.write(writer);
-
-// Or compute just the accept key.
-var accept_buf: ws.AcceptKey = undefined;
-const accept = ws.computeAcceptKey(client_key, &accept_buf);
-```
-
-## Examples
-
-The `examples/` directory has complete, runnable echo servers:
-
-| Example | What it demonstrates |
-|---|---|
-| **`blocking-echo`** | Single-threaded blocking server with `std.net`. Simplest possible integration. |
-| **`http-upgrade`** | Thread-per-connection HTTP server. Serves a test page on `/`, upgrades to WebSocket on `/ws`. |
-| **`xev-echo`** | Completion-based server on [libxev](https://github.com/mitchellh/libxev) with connection pooling. Closest to production use. |
-
-```
-just examples
-```
-
-## Design
-
-- **No allocations.** The parser operates on caller-provided buffers and returns slices back into them. Internal state is a 14-byte header buffer in the parser, plus 125 bytes in the frame handler for control frame payloads.
-- **No UTF-8 validation.** Text frame payloads are opaque bytes. Validation is the caller's choice.
-- **Compression-aware, not compression-providing.** The parser and serializer support the `permessage-deflate` extension (RFC 7692) — RSV1 handling, negotiation helpers, and a `compressed` flag on frames — but actual deflate/inflate is the caller's responsibility.
-- **No HTTP parsing.** The handshake computes `Sec-WebSocket-Accept`. Everything else about your HTTP stack is up to you.
-
-## Conformance
-
-Passes the full [Autobahn test suite](https://github.com/crossbario/autobahn-testsuite). The devshell includes the native PyPy/OpenSSL runtime needed to run `wstest` directly, without Docker:
-
-```
-just autobahn-setup
-just conformance       # fast local subset, excludes 9.*, 12.*, 13.*
-just conformance-full  # full suite
-just report        # serve the HTML report on localhost:8080
-```
-
-`just ci` runs the full Autobahn suite.
+`nix develop` provides the toolchain. `just ci` runs the tests, the lint, the
+examples, the fast Autobahn profile, and the site build. `just conformance-full`
+runs every Autobahn case, takes over ten minutes, and holds about two gigabytes.
 
 ## License
 
-MIT
+MIT. See [`LICENSE`](LICENSE). The logo files in `docs/static/` are baskingspot
+marks and are not covered by it. See
+[`docs/static/LICENSE`](docs/static/LICENSE).
+
+## How it's made
+
+Built with LLM assistance. [How, in detail](https://github.com/baskingspot/.github/blob/main/docs/AI.md).
+
+<a href="https://github.com/baskingspot"><img src="https://raw.githubusercontent.com/baskingspot/.github/main/brand/assets/badge.svg" alt="baskingspot" height="24"></a>
