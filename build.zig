@@ -192,6 +192,49 @@ pub fn build(b: *std.Build) void {
     );
     conformance_client_full_step.dependOn(&conformance_client_full_script.step);
 
+    // The interop example: the WebSocket frame layer over the HTTP/1 machine
+    // from baskingspot/http. Lazy, like libxev, so a consumer fetches neither.
+    if (b.lazyDependency("http", .{})) |http_dep| {
+        const http_echo = b.addExecutable(.{
+            .name = "http-echo",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/http-echo.zig"),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "websocket", .module = mod },
+                    .{ .name = "http", .module = http_dep.module("http") },
+                },
+            }),
+        });
+        const http_echo_install = b.addInstallArtifact(http_echo, .{});
+        examples_step.dependOn(&http_echo_install.step);
+
+        const http_echo_run = b.addRunArtifact(http_echo);
+        if (b.args) |args| http_echo_run.addArgs(args);
+        const http_echo_step = b.step(
+            "example-http",
+            "Run the baskingspot/http echo server",
+        );
+        http_echo_step.dependOn(&http_echo_run.step);
+
+        const http_conformance = b.addSystemCommand(&.{
+            "nu",
+            run_autobahn,
+            b.getInstallPath(.bin, "http-echo"),
+            "9004",
+            "http-echo",
+            "fast",
+        });
+        http_conformance.step.dependOn(&http_echo_install.step);
+
+        const http_conf_step = b.step(
+            "conformance-http",
+            "Run Autobahn against the baskingspot/http echo server",
+        );
+        http_conf_step.dependOn(&http_conformance.step);
+    }
+
     if (b.lazyDependency("libxev", .{})) |xev_dep| {
         const xev_echo = b.addExecutable(.{
             .name = "xev-echo",

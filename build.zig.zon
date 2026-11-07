@@ -4,6 +4,13 @@
     .fingerprint = 0x42ce80b95e1d4450,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
+        // The HTTP layer the interop example drives. Lazy: only that example
+        // imports it, and the library never does.
+        .http = .{
+            .url = "https://baskingspot.dev/http/v0.1.0.tar.gz",
+            .hash = "http-0.1.0-bxrZzad8DABlcBcnRJXiua8ORaj2OZYYZh0GUtxBTTOt",
+            .lazy = true,
+        },
         // The test runner and the bench engine. Lazy: only the root build
         // uses it, and build.zig returns early for a consumer.
         .testingx = .{

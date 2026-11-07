@@ -15,6 +15,11 @@ test:
 examples:
     zig build examples
 
+[doc("Run the baskingspot/http echo server on 127.0.0.1:8080: an HTTP page on any other request, a WebSocket upgrade on /ws")]
+[group("example")]
+example-http:
+    zig build example-http
+
 [doc("Install the native Autobahn TestSuite into the local PyPy environment. Every conformance recipe depends on this, and it does nothing when the install is current")]
 [group("conformance")]
 autobahn-setup:
@@ -54,6 +59,11 @@ conformance-client-full: autobahn-setup
 [group("conformance")]
 conformance-xev: autobahn-setup
     zig build conformance-xev
+
+[doc("Run the fast Autobahn profile against the baskingspot/http echo server: the HTTP/1 machine hands the connection to this library")]
+[group("conformance")]
+conformance-http: autobahn-setup
+    zig build conformance-http
 
 [doc("Serve the last Autobahn report at http://127.0.0.1:PORT")]
 [group("conformance")]
@@ -106,4 +116,4 @@ doc-deploy: doc
 
 [doc("Everything CI runs")]
 [group("ci")]
-ci: test lint examples conformance doc
+ci: test lint examples conformance conformance-http doc
