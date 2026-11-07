@@ -5,6 +5,8 @@ All notable changes to websocket are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-07
+
 ### Added
 
 - `server` and `client` namespaces. Each re-exports the parser, the writer, and
