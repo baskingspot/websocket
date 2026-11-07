@@ -83,7 +83,7 @@ just ci                      # what CI runs
 ```
 
 `just ci` runs the fast profile, not `conformance-full`. The full profile takes
-over ten minutes and grows to about two gigabytes under pypy, so it runs by hand
+over ten minutes and needs about 2 GB of memory under pypy, so it runs by hand
 before a release.
 
 The echo server binds 127.0.0.1:9002 and does not set `SO_REUSEADDR`, so a

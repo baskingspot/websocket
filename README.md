@@ -14,8 +14,8 @@ frame layer only: you read the bytes, hand them over, and get frames back.
 
 `Parser.feed` takes the bytes you already read and returns one event with the
 count it consumed. `FrameHandler` sits above it and reassembles fragments into
-messages. The state is a 14-byte header in the parser and 125 bytes of control
-payload in the handler, and nothing else.
+messages. The parser holds a 14-byte header and the handler 125 bytes for a
+control payload. Nothing else.
 
 ## What is in it
 
@@ -48,9 +48,8 @@ const websocket = b.dependency("websocket", .{ .target = target, .optimize = opt
 exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
-The package exports `server` and `client` namespaces, so a program on one side
-of a connection imports one and switches when it is on the other. `websocket`
-builds with Zig 0.16 only.
+The package exports `server` and `client` namespaces, so a program imports the
+one for its side of the connection. `websocket` builds with Zig 0.16.
 
 ## Documentation
 
@@ -67,7 +66,8 @@ just ci
 
 `nix develop` provides the toolchain. `just ci` runs the tests, the lint, the
 examples, the fast Autobahn profile, and the site build. `just conformance-full`
-runs every Autobahn case, takes over ten minutes, and holds about two gigabytes.
+runs every Autobahn case, takes over ten minutes, and needs about 2 GB of
+memory.
 
 ## License
 

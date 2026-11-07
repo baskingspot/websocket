@@ -43,4 +43,4 @@ All notable changes to websocket are recorded here. The format follows
   fields an upgrade request carries, their validation, and a complete 101
   response in a fixed buffer.
 - The Autobahn TestSuite passes 247 of 247 cases in its fast profile against
-  the echo server, and the fast profile is a CI gate.
+  the echo server, and that profile is a CI gate.

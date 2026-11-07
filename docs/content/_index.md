@@ -11,8 +11,8 @@ frame layer only: you read the bytes, hand them over, and get frames back.
 
 `Parser.feed` takes the bytes you already read and returns one event with the
 count it consumed. `FrameHandler` sits above it and reassembles fragments into
-messages. The state is a 14-byte header in the parser and 125 bytes of control
-payload in the handler, and nothing else.
+messages. The parser holds a 14-byte header and the handler 125 bytes for a
+control payload. Nothing else.
 
 - [Frames](#frames): `Parser.feed` returns `.frame_header`, `.payload`, `.frame_end`, or `.need_more`, unmasks server-side payloads in the buffer you gave it, and keeps 14 bytes of header state.
 - [Messages](#messages): `FrameHandler.feed` reassembles fragments and returns `.data`, `.data_end`, `.ping`, `.pong`, or `.close`.
@@ -39,7 +39,8 @@ const websocket = b.dependency("websocket", .{ .target = target, .optimize = opt
 exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
-`websocket` builds with Zig 0.16, and `build.zig.zon` says so.
+`websocket` builds with Zig 0.16, which is `minimum_zig_version` in
+`build.zig.zon`.
 
 ## Import it
 
@@ -50,9 +51,8 @@ const websocket = @import("websocket");
 The package exports two namespaces, and you pick one by your role in the
 connection. `websocket.server` parses masked frames and writes unmasked ones.
 `websocket.client` parses unmasked frames and masks what it writes, in place,
-in your buffer. Both namespaces carry the same type names, so one file can hold
-both when a program is on both sides of different connections, at the cost of
-one alias:
+in your buffer. Both namespaces use the same type names, so a program on both
+sides of two connections aliases them:
 
 ```zig
 const server_ws = @import("websocket").server;
@@ -75,9 +75,8 @@ that does not build that example never fetches it.
 
 # Frames
 
-`Parser` is the whole library at the bottom. It reads a frame header, hands you
-the payload bytes where they already are, and tells you how much of the input
-it used.
+`Parser` is the frame layer. It reads a frame header, hands you the payload
+bytes where they already are, and tells you how much of the input it used.
 
 ```zig
 const ws = @import("websocket").server;
@@ -161,8 +160,8 @@ may interleave inside a fragmented message, and the validator allows them.
 
 # Writing
 
-Every write goes to a `*std.Io.Writer` you own. The library never flushes, so a
-loop can batch several frames before one `flush`.
+Every write goes to a `*std.Io.Writer` you own. The library never flushes, so
+your loop can batch frames and flush once.
 
 ## Write one frame
 
@@ -292,7 +291,7 @@ echo client against Autobahn's fuzzing server. `just conformance-xev` runs the
 fast profile against the libxev example instead of the blocking echo server.
 
 The fast profile is in `just ci`. The full profile takes over ten minutes and
-holds about two gigabytes, so it runs by hand and not in CI. A pass means the frame layer follows RFC 6455 as Autobahn reads
+needs about 2 GB of memory, so it runs by hand and not in CI. A pass means the frame layer follows RFC 6455 as Autobahn reads
 it, including the fragmentation and control-frame cases a unit test tends to
 miss.
 
