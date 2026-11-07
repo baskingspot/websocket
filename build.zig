@@ -9,8 +9,28 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const mod_tests = b.addTest(.{ .root_module = mod });
+    // The only exported module. Everything below is developer-only: returning
+    // early for a consumer keeps testingx, libxev, and the test binaries out
+    // of its fetch path.
+    if (b.pkg_hash.len != 0) return;
+
+    // testingx provides the test runner and the bench engine. It is lazy
+    // because only the root build uses it; a consumer never fetches it. On the
+    // first configure pass it is not fetched yet, `lazyDependency` returns
+    // null, and the build runner fetches it and reruns this script.
+    const testingx_dep = b.lazyDependency("testingx", .{ .target = target });
+    const test_runner: ?std.Build.Step.Compile.TestRunner = if (testingx_dep) |dep|
+        .{ .path = dep.path("src/runner.zig"), .mode = .simple }
+    else
+        null;
+
+    const mod_tests = b.addTest(.{
+        .root_module = mod,
+        .test_runner = test_runner,
+    });
     const run_mod_tests = b.addRunArtifact(mod_tests);
+    run_mod_tests.addArg(b.fmt("--seed=0x{x}", .{b.graph.random_seed}));
+    if (b.args) |args| run_mod_tests.addArgs(args);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_mod_tests.step);
 

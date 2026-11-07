@@ -4,6 +4,13 @@
     .fingerprint = 0x42ce80b95e1d4450,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
+        // The test runner and the bench engine. Lazy: only the root build
+        // uses it, and build.zig returns early for a consumer.
+        .testingx = .{
+            .url = "https://baskingspot.dev/testingx/v0.4.0.tar.gz",
+            .hash = "testingx-0.4.0-ib95-2JkAwDVM639ma-akYafT4bdewLfpFaAEnLBzQXG",
+            .lazy = true,
+        },
         .libxev = .{
             // mattrobenolt fork, zig-0.16 branch: upstream is unmaintained
             // and has no 0.16 port.
