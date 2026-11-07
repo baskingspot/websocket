@@ -61,12 +61,13 @@ report PORT="8080": autobahn-setup
     @echo "http://localhost:{{ PORT }}/index.html"
     python3 -m http.server -d test/autobahn/reports -b 127.0.0.1 {{ PORT }}
 
-[doc("Lint Zig, Nix, Markdown, the workflows, and this justfile: ziglint-0-16, the ast-grep house rules, zig fmt, nix fmt, oxfmt, actionlint, zizmor, and just --fmt")]
+[doc("Lint Zig, Nushell, Nix, Markdown, the workflows, and this justfile: ziglint-0-16, the ast-grep house rules, zig fmt, nufmt, nix fmt, oxfmt, actionlint, zizmor, and just --fmt")]
 [group("lint")]
 lint:
     ziglint-0-16
     baskingspot-lint src
     zig fmt --check src test examples build.zig build.zig.zon
+    nufmt --dry-run --all-recurse
     nix fmt -- --ci
     oxfmt --check .oxfmtrc.jsonc README.md AGENTS.md CHANGELOG.md docs/content docs/config.toml .github
     actionlint
@@ -77,6 +78,7 @@ lint:
 [group("lint")]
 fmt:
     zig fmt src test examples build.zig build.zig.zon
+    nufmt --all-recurse
     nix fmt
     oxfmt .oxfmtrc.jsonc README.md AGENTS.md CHANGELOG.md docs/content docs/config.toml .github
     just --fmt

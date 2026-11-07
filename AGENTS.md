@@ -70,7 +70,7 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 
 ```
 just test                    # unit tests
-just fmt                     # zig fmt, nix fmt, oxfmt, just --fmt
+just fmt                     # zig fmt, nufmt, nix fmt, oxfmt, just --fmt
 just lint                    # the checks in `just fmt` plus ziglint and the house rules
 just examples                # build every example
 just conformance             # the fast Autobahn profile against the echo server
