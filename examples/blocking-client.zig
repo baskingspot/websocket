@@ -14,14 +14,9 @@ const print = std.debug.print;
 
 const ws = @import("websocket").client;
 
-pub fn main(init: std.process.Init.Minimal) !void {
-    // Single-threaded blocking I/O; entropy and networking both come from
-    // this Io instance (std.crypto.random was removed in 0.16).
-    var threaded: Io.Threaded = .init_single_threaded;
-    defer threaded.deinit();
-    const io = threaded.io();
-
-    const port = parsePort(init.args);
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+    const port = parsePort(init.minimal.args);
     const stream = try tcpConnect(io, port);
     defer stream.close(io);
 

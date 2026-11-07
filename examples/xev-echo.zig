@@ -453,23 +453,21 @@ fn onAccept(
     return .rearm;
 }
 
-pub fn main(init: std.process.Init.Minimal) !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = debug_allocator.deinit();
-    var allocator = debug_allocator.allocator();
+pub fn main(init: std.process.Init) !void {
+    var gpa = init.gpa;
 
     // Initialize the connection pool with the general-purpose allocator.
     // The pool recycles Connection structs so we don't hit the allocator
     // on every accept/close cycle.
     // 0.16: the default (growable) MemoryPool takes an initial capacity and
     // threads the allocator through deinit/create.
-    connection_pool = try .initCapacity(allocator, 64);
-    defer connection_pool.deinit(allocator);
+    connection_pool = try .initCapacity(gpa, 64);
+    defer connection_pool.deinit(gpa);
 
     var loop: xev.Loop = try .init(.{});
     defer loop.deinit();
 
-    const port = parsePort(init.args);
+    const port = parsePort(init.minimal.args);
     const address: std.Io.net.Ip4Address = try .parse("127.0.0.1", port);
     var server: xev.TCP = try .init();
     try server.bind(address);
@@ -480,7 +478,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     // Start accepting connections. The accept callback re-arms itself
     // so we keep accepting after each connection.
     var accept_completion: xev.Completion = .{};
-    server.accept(&loop, &accept_completion, Allocator, &allocator, onAccept);
+    server.accept(&loop, &accept_completion, Allocator, &gpa, onAccept);
 
     // Run the event loop until all completions are done (i.e. forever,
     // since the accept listener keeps re-arming).

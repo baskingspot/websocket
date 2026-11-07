@@ -25,18 +25,11 @@ const print = std.debug.print;
 
 const ws = @import("websocket").server;
 
-pub fn main(init: std.process.Init.Minimal) !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = debug_allocator.deinit();
-    const allocator = debug_allocator.allocator();
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
+    const gpa = init.gpa;
 
-    // One Io.Threaded shared across the accept loop and connection threads;
-    // Threaded is the threadsafe implementation.
-    var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
-    defer threaded.deinit();
-    const io = threaded.io();
-
-    const port = parsePort(init.args);
+    const port = parsePort(init.minimal.args);
     const address: Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
     var listener = try address.listen(io, .{});
     defer listener.deinit(io);
@@ -53,7 +46,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
         const thread = std.Thread.spawn(
             .{},
             handleConnectionThread,
-            .{ allocator, io, stream },
+            .{ gpa, io, stream },
         ) catch |err| {
             print("thread spawn error: {}\n", .{err});
             stream.close(io);

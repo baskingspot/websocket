@@ -29,16 +29,11 @@ const page =
     "websocket echo server\n" ++
     "connect to /ws with an upgrade request\n";
 
-pub fn main(init: std.process.Init.Minimal) !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = debug_allocator.deinit();
-    const gpa = debug_allocator.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
 
-    var threaded: Io.Threaded = .init(gpa, .{ .environ = init.environ });
-    defer threaded.deinit();
-    const io = threaded.io();
-
-    const port = parsePort(init.args);
+    const port = parsePort(init.minimal.args);
     const address: Io.net.IpAddress = try .parseIp4("127.0.0.1", port);
     var listener = try address.listen(io, .{ .reuse_address = true });
     defer listener.deinit(io);
