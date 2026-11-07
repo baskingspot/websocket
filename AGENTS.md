@@ -88,7 +88,9 @@ before a release.
 
 The echo server binds 127.0.0.1:9002 and does not set `SO_REUSEADDR`, so a
 conformance run started within a minute of the previous one fails with
-`AddressInUse`. Wait, or change the port in `build.zig`.
+`AddressInUse`. Pass another port: `just conformance -Dport=9003`. Zig's
+`reuse_address` option is not the fix, because it sets `SO_REUSEPORT` too and
+two live listeners would then share the port.
 
 ## Docs
 
