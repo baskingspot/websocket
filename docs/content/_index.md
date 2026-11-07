@@ -63,15 +63,16 @@ const client_ws = @import("websocket").client;
 
 Each example is a complete program:
 
-| Example           | What it shows                                                                           |
-| ----------------- | --------------------------------------------------------------------------------------- |
-| `blocking-echo`   | One connection at a time over `std.net`, the shortest correct loop.                     |
-| `blocking-client` | The client role against `blocking-echo`.                                                |
-| `http-upgrade`    | A thread per connection with `std.http.Server`, a page on `/`, and an upgrade on `/ws`. |
-| `xev-echo`        | A completion-based server on libxev with connection pooling.                            |
+| Example           | What it shows                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `blocking-echo`   | One connection at a time over `std.net`, the shortest correct loop.                                                        |
+| `blocking-client` | The client role against `blocking-echo`.                                                                                   |
+| `http-upgrade`    | A thread per connection with `std.http.Server`, a page on `/`, and an upgrade on `/ws`.                                    |
+| `http-echo`       | The same upgrade through `baskingspot/http`: its HTTP/1 machine parses the request and hands over the bytes past the head. |
+| `xev-echo`        | A completion-based server on libxev with connection pooling.                                                               |
 
-`just examples` builds all four. The libxev dependency is lazy, so a project
-that does not build that example never fetches it.
+`just examples` builds all five. The libxev and http dependencies are lazy, so
+a project that does not build those examples never fetches them.
 
 # Frames
 
@@ -273,6 +274,12 @@ parsed. With [baskingspot/http](https://baskingspot.dev/http/) that is
 returns `.switched`, and `remainingInput()` holds the bytes the peer sent past
 the request. Those bytes are the first thing to feed `Parser`, and any HTTP
 server that can end its own parsing there works the same way.
+`examples/http-echo.zig` is the whole loop, and it passes the Autobahn profile:
+
+```sh
+just example-http          # serve on 127.0.0.1:8080
+just conformance-http      # run the fast Autobahn profile against it
+```
 
 # Conformance
 

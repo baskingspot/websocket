@@ -55,7 +55,7 @@ one for its side of the connection. `websocket` builds with Zig 0.16.
 
 - The [guide](https://baskingspot.dev/websocket/) says which piece to use at each step of a connection, with the symbols a caller needs.
 - The [API reference](https://baskingspot.dev/websocket/api/) documents every symbol.
-- [`examples/`](examples/) holds four complete programs: a blocking echo server, its client, an HTTP upgrade, and a libxev server.
+- [`examples/`](examples/) holds five complete programs: a blocking echo server, its client, two HTTP upgrades, and a libxev server.
 
 ## Work on it
 

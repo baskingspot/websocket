@@ -29,8 +29,10 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 - `test/echo_server.zig` and `test/echo_client.zig` are scaffolding for the
   Autobahn suite. They are not part of the library, and they link zlib for
   permessage-deflate.
-- `examples/` holds four complete programs. `xev-echo.zig` is the only one that
-  needs the lazy libxev dependency.
+- `examples/` holds five complete programs. `xev-echo.zig` needs the lazy
+  libxev dependency, and `http-echo.zig` needs the lazy `baskingspot/http`
+  dependency: it drives `h1.ServerConn` by hand and is the interop the guide
+  points at. The library itself imports neither.
 - `.pi/skills/rfc6455/` is a quick reference to the vendored spec: section
   offsets into `docs/specs/rfc6455-websocket.txt`, the frame layout, and the
   close codes.
@@ -77,12 +79,15 @@ just conformance             # the fast Autobahn profile against the echo server
 just conformance-full        # every Autobahn case, several minutes
 just conformance-client      # the fast profile against the echo client
 just conformance-xev         # the fast profile against the libxev example
+just conformance-http        # the fast profile against the baskingspot/http example
+just example-http            # serve the baskingspot/http example on 127.0.0.1:8080
 just report                  # serve the last report on 127.0.0.1:8080
 just doc                     # build the site into zig-out/site/websocket
 just ci                      # what CI runs
 ```
 
-`just ci` runs the fast profile, not `conformance-full`. The full profile takes
+`just ci` runs the fast profile twice, once against `test/echo_server.zig` and
+once against `examples/http-echo.zig`, and it does not run `conformance-full`. The full profile takes
 over ten minutes and needs about 2 GB of memory under pypy, so it runs by hand
 before a release.
 

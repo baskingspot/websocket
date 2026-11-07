@@ -46,3 +46,7 @@ All notable changes to websocket are recorded here. The format follows
   response in a fixed buffer.
 - The Autobahn TestSuite passes 247 of 247 cases in its fast profile against
   the echo server, and that profile is a CI gate.
+- `examples/http-echo.zig`: the interop with `baskingspot/http`. Its
+  `h1.ServerConn` parses the request, queues the 101, and `remainingInput()`
+  hands the frame layer the bytes it read past the head. `just conformance-http`
+  runs the fast Autobahn profile against it, and `just ci` runs that too.
