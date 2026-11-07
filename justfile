@@ -32,13 +32,13 @@ autobahn-wstest *ARGS: autobahn-setup
 
 [doc("Run the fast Autobahn profile against the echo server: every case except 9.*, 12.*, and 13.*")]
 [group("conformance")]
-conformance: autobahn-setup
-    zig build conformance
+conformance *ARGS: autobahn-setup
+    zig build conformance {{ ARGS }}
 
 [doc("Run the full Autobahn profile against the echo server")]
 [group("conformance")]
-conformance-full: autobahn-setup
-    zig build conformance-full
+conformance-full *ARGS: autobahn-setup
+    zig build conformance-full {{ ARGS }}
 
 [doc("Run the fast Autobahn profile against the echo client")]
 [group("conformance")]

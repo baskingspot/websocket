@@ -119,11 +119,21 @@ pub fn build(b: *std.Build) void {
 
     const run_autobahn = b.path("scripts/run-autobahn.nu").getPath(b);
 
+    // The suite leaves the port in TIME_WAIT for a minute after a run, so a
+    // second run against the same port fails to bind. Pick another one with
+    // `-Dport=9003`, or because another checkout already holds 9002.
+    const conformance_port = b.option(
+        u16,
+        "port",
+        "Port for the conformance echo server (default 9002)",
+    ) orelse 9002;
+    const conformance_port_arg = b.fmt("{d}", .{conformance_port});
+
     const conformance_script = b.addSystemCommand(&.{
         "nu",
         run_autobahn,
         b.getInstallPath(.bin, "echo-server"),
-        "9002",
+        conformance_port_arg,
         "echo-server",
         "fast",
     });
@@ -136,7 +146,7 @@ pub fn build(b: *std.Build) void {
         "nu",
         run_autobahn,
         b.getInstallPath(.bin, "echo-server"),
-        "9002",
+        conformance_port_arg,
         "echo-server",
         "full",
     });
