@@ -2,7 +2,7 @@
 
 RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 `README.md` is the user overview and `docs/content/_index.md` is the guide.
-`rfc6455.txt` is the spec, vendored.
+`docs/specs/rfc6455-websocket.txt` is the spec, vendored.
 
 ## Architecture
 
@@ -31,8 +31,9 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
   permessage-deflate.
 - `examples/` holds four complete programs. `xev-echo.zig` is the only one that
   needs the lazy libxev dependency.
-- `.agents/skills/rfc6455.md` is a quick reference to the vendored spec, and
-  `CLAUDE.md` is a symlink to this file.
+- `.pi/skills/rfc6455/` is a quick reference to the vendored spec: section
+  offsets into `docs/specs/rfc6455-websocket.txt`, the frame layout, and the
+  close codes.
 
 ## Design decisions
 
@@ -82,8 +83,8 @@ just ci                      # what CI runs
 ```
 
 `just ci` runs the fast profile, not `conformance-full`. The full profile takes
-over ten minutes and grows to about two gigabytes under pypy, so it runs by
-hand before a release.
+over ten minutes and grows to about two gigabytes under pypy, so it runs by hand
+before a release.
 
 The echo server binds 127.0.0.1:9002 and does not set `SO_REUSEADDR`, so a
 conformance run started within a minute of the previous one fails with
@@ -112,5 +113,5 @@ conformance run started within a minute of the previous one fails with
 
 ## RFC reference
 
-The full RFC 6455 text is `rfc6455.txt`. The quick reference is
-`.agents/skills/rfc6455.md`.
+The full RFC 6455 text is `docs/specs/rfc6455-websocket.txt`. The quick
+reference is `.pi/skills/rfc6455/`.

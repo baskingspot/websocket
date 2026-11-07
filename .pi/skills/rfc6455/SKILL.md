@@ -1,11 +1,11 @@
 ---
-description: "WebSocket Protocol RFC 6455 reference. Use when implementing or testing WebSocket framing, handshake, close codes, masking, fragmentation, or UTF-8 validation. Read the full RFC from rfc6455.txt in the project root."
-user_invocable: true
+name: rfc6455
+description: WebSocket Protocol RFC 6455 reference. Use when implementing or testing WebSocket framing, the handshake, close codes, masking, fragmentation, or UTF-8 validation, and when a question needs the RFC section that decides it.
 ---
 
 # RFC 6455 - The WebSocket Protocol
 
-The full RFC text is at `rfc6455.txt` in the project root. Read the relevant sections to answer protocol questions.
+The full RFC text is at `docs/specs/rfc6455-websocket.txt`. Read the relevant sections to answer protocol questions.
 
 ## Quick Reference - Key Sections
 
@@ -81,4 +81,4 @@ transformed-octet-i = original-octet-i XOR masking-key-octet-j
 ```
 
 ## When to read the full RFC
-When you need exact wording for MUST/SHOULD/MAY requirements, read the specific section from `rfc6455.txt`.
+When you need exact wording for MUST/SHOULD/MAY requirements, read the specific section from `docs/specs/rfc6455-websocket.txt`.
