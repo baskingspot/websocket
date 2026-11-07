@@ -2,7 +2,7 @@
 use ./autobahn-env.nu [autobahn-import-check, run-capture, setup-env]
 def pip-freeze [] {
     setup-env
-    if (not (autobahn-import-check)) {
+    if not (autobahn-import-check) {
         print --stderr "Autobahn TestSuite is not installed yet."
         print --stderr "Run: just autobahn-setup"
         exit 1
@@ -10,10 +10,10 @@ def pip-freeze [] {
     run-capture pypy "-m" "pip" "freeze" "--path" $env.AUTOBAHN_SITE_PACKAGES "--all" | get stdout | lines | each {|line| if $line != "" { $line } } | compact | each {|line| if not ($line | str contains " @ file://") { $line } } | compact
 }
 def parse-requirement [requirement: string] {
-    let parts = ($requirement | split row "==")
-    if (($parts | length) != 2) { error make {
-        msg: $"unsupported requirement format: ($requirement)"
-    } }
+    let parts = $requirement | split row "=="
+    if ($parts | length) != 2 {
+        error make {msg: $"unsupported requirement format: ($requirement)"}
+    }
     {
         requirement: $requirement
         name: ($parts | get 0)
@@ -22,15 +22,14 @@ def parse-requirement [requirement: string] {
 }
 def fetch-sdist [name: string, version: string] {
     let release = (http get $"https://pypi.org/pypi/($name)/($version)/json")
-    let sdists = ($release.urls | where packagetype == "sdist")
-    if (($sdists | length) != 1) { error make {
-        msg: $"expected exactly one sdist for ($name)==($version), got (($sdists | length))"
-    } }
-    let artifact = ($sdists | first)
-    {
-        filename: $artifact.filename
-        sha256: $artifact.digests.sha256
+    let sdists = $release.urls | where packagetype == "sdist"
+    if ($sdists | length) != 1 {
+        error make {
+            msg: $"expected exactly one sdist for ($name)==($version), got (($sdists | length))"
+        }
     }
+    let artifact = $sdists | first
+    {filename: $artifact.filename, sha256: $artifact.digests.sha256}
 }
 def render-block [requirement: string] {
     let parsed = (parse-requirement $requirement)
@@ -42,7 +41,7 @@ def render-block [requirement: string] {
     ]
 }
 def main [--output(-o): path = test/autobahn/requirements.txt] {
-    let output_path = ($output | path expand)
+    let output_path = $output | path expand
     mkdir ($output_path | path dirname)
     let excluded_requirements = ["linecache2==1.0.0", "traceback2==1.4.0", "unittest2==1.1.0"]
     let requirements = (
@@ -60,7 +59,7 @@ def main [--output(-o): path = test/autobahn/requirements.txt] {
         "# autobahntestsuite itself is installed separately from the pinned source tree."
         ""
     ]
-    let body = ($requirements | each {|requirement| render-block $requirement } | flatten)
+    let body = $requirements | each {|requirement| render-block $requirement } | flatten
     (
         $header | append $body | flatten | str join "\n" | $"($in)\n"
     ) | save --force $output_path

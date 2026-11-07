@@ -2,7 +2,7 @@
 use ./autobahn-env.nu [autobahn-import-check, setup-env]
 def --wrapped main [...args: string] {
     setup-env
-    if (not (autobahn-import-check)) {
+    if not (autobahn-import-check) {
         print --stderr "Autobahn TestSuite is not installed yet."
         print --stderr "Run: just autobahn-setup"
         exit 1

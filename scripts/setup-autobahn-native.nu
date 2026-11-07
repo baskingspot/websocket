@@ -23,7 +23,7 @@ def source-tree-dir [cfg: record] {
 }
 def install-fingerprint [lockfile_path: path, cfg: record] { $"lock_sha256=(open --raw $lockfile_path | hash sha256)\nsource_dir=($cfg.autobahn_checkout_dir)\n" }
 def bootstrap-pip [] {
-    if ((run-capture pypy "-m" "pip" "--version").exit_code == 0) { return }
+    if (run-capture pypy "-m" "pip" "--version").exit_code == 0 { return }
     print $"Bootstrapping pip into ($env.AUTOBAHN_PYTHONUSERBASE)"
     run-or-exit pypy "-m" "ensurepip" "--user"
 }
@@ -48,8 +48,8 @@ def install-bootstrap-dependencies [lockfile_path: path] {
     install-locked-requirement $lockfile_path '^incremental=='
 }
 def autobahn-install-is-current [lockfile_path: path, cfg: record] {
-    if (not (autobahn-import-check)) { return false }
-    if (not ($cfg.autobahn_stamp_file | path exists)) { return false }
+    if not (autobahn-import-check) { return false }
+    if not ($cfg.autobahn_stamp_file | path exists) { return false }
     (open --raw $cfg.autobahn_stamp_file) == (install-fingerprint $lockfile_path $cfg)
 }
 def write-install-stamp [lockfile_path: path, cfg: record] {
@@ -61,12 +61,12 @@ def reset-runtime-env [cfg: record] {
     mkdir $cfg.autobahn_home
 }
 def check-inputs [lockfile_path: path, cfg: record] {
-    if (not ($lockfile_path | path exists)) {
+    if not ($lockfile_path | path exists) {
         print --stderr $"ERROR: missing lockfile at ($lockfile_path)"
         print --stderr "Run: just autobahn-lock"
         exit 1
     }
-    if (not ((source-tree-dir $cfg) | path exists)) {
+    if not ((source-tree-dir $cfg) | path exists) {
         print --stderr $"ERROR: missing Autobahn source at ($cfg.autobahn_checkout_dir)"
         exit 1
     }

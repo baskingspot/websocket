@@ -19,14 +19,49 @@ def script-dir [] {
 export def config [] {
     let root_dir = (project-dir)
     let scripts_dir = (script-dir)
-    let autobahn_home = ($env | get --optional AUTOBAHN_HOME | default ([$root_dir, ".autobahn"] | path join))
-    let autobahn_pythonuserbase = ($env | get --optional AUTOBAHN_PYTHONUSERBASE | default ([$autobahn_home, "pypy-user"] | path join))
-    let autobahn_site_packages = ($env | get --optional AUTOBAHN_SITE_PACKAGES | default ([$autobahn_pythonuserbase, "lib", "pypy2.7", "site-packages"] | path join))
-    let autobahn_bin_dir = ($env | get --optional AUTOBAHN_BIN_DIR | default ([$autobahn_pythonuserbase, "bin"] | path join))
-    let autobahn_checkout_dir = ($env | get --optional AUTOBAHN_CHECKOUT_DIR | default ([$autobahn_home, "src", "autobahn-testsuite"] | path join))
-    let autobahn_reports_dir = ($env | get --optional AUTOBAHN_REPORTS_DIR | default ([$root_dir, "test", "autobahn", "reports"] | path join))
-    let autobahn_bootstrap_dir = ($env | get --optional AUTOBAHN_BOOTSTRAP_DIR | default ([$scripts_dir, "python-bootstrap"] | path join))
-    let autobahn_stamp_file = ($env | get --optional AUTOBAHN_STAMP_FILE | default ([$autobahn_home, "install.stamp"] | path join))
+    let autobahn_home = (
+        $env
+        | get --optional AUTOBAHN_HOME
+        | default ([$root_dir, ".autobahn"] | path join)
+    )
+    let autobahn_pythonuserbase = (
+        $env
+        | get --optional AUTOBAHN_PYTHONUSERBASE
+        | default ([$autobahn_home, "pypy-user"] | path join)
+    )
+    let autobahn_site_packages = (
+        $env
+        | get --optional AUTOBAHN_SITE_PACKAGES
+        | default (
+            [$autobahn_pythonuserbase, "lib", "pypy2.7", "site-packages"]
+            | path join
+        )
+    )
+    let autobahn_bin_dir = (
+        $env
+        | get --optional AUTOBAHN_BIN_DIR
+        | default ([$autobahn_pythonuserbase, "bin"] | path join)
+    )
+    let autobahn_checkout_dir = (
+        $env
+        | get --optional AUTOBAHN_CHECKOUT_DIR
+        | default ([$autobahn_home, "src", "autobahn-testsuite"] | path join)
+    )
+    let autobahn_reports_dir = (
+        $env
+        | get --optional AUTOBAHN_REPORTS_DIR
+        | default ([$root_dir, "test", "autobahn", "reports"] | path join)
+    )
+    let autobahn_bootstrap_dir = (
+        $env
+        | get --optional AUTOBAHN_BOOTSTRAP_DIR
+        | default ([$scripts_dir, "python-bootstrap"] | path join)
+    )
+    let autobahn_stamp_file = (
+        $env
+        | get --optional AUTOBAHN_STAMP_FILE
+        | default ([$autobahn_home, "install.stamp"] | path join)
+    )
     {
         project_dir: $root_dir
         script_dir: $scripts_dir
@@ -41,8 +76,8 @@ export def config [] {
     }
 }
 export def report-command-result [result: record] {
-    if (($result.stdout | default "") != "") { print --raw $result.stdout }
-    if (($result.stderr | default "") != "") { print --stderr --raw $result.stderr }
+    if ($result.stdout | default "") != "" { print --raw $result.stdout }
+    if ($result.stderr | default "") != "" { print --stderr --raw $result.stderr }
 }
 export def run-capture [...command] {
     run-external ...$command | complete

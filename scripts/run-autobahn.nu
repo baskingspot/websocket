@@ -25,18 +25,18 @@ def suite-profile [name: string] {
 
 def report-summary [reports_dir: path] {
     let index_path = [$reports_dir, "index.json"] | path join
-    if (not ($index_path | path exists)) {
+    if not ($index_path | path exists) {
         print --stderr $"ERROR: missing Autobahn summary at ($index_path)"
         exit 1
     }
     let allowed_behaviors = ["OK", "NON-STRICT", "INFORMATIONAL", "UNIMPLEMENTED"]
     let results = (open $index_path)
     let summaries = ($results | transpose agent cases | each {|entry|
-            let case_rows = ($entry.cases | transpose case_id data)
+            let case_rows = $entry.cases | transpose case_id data
             let failed = (
                 $case_rows
                 | each {|case|
-                    let behavior = ($case.data.behavior | default "")
+                    let behavior = $case.data.behavior | default ""
                     if not ($allowed_behaviors | any {|allowed| $allowed == $behavior }) {
                         $case
                     }
@@ -52,7 +52,7 @@ def report-summary [reports_dir: path] {
             }
         })
     $summaries | each {|summary|
-        let passed = ($summary.total - ($summary.failed | length))
+        let passed = $summary.total - ($summary.failed | length)
         print $"($summary.agent): ($passed)/($summary.total) passed"
 
         if (($summary.failed | length) > 0) {
@@ -75,7 +75,7 @@ def main [
     profile_name: string = fast
 ] {
     setup-env
-    if (not ($server_bin | path exists)) {
+    if not ($server_bin | path exists) {
         print --stderr $"ERROR: server not found at ($server_bin)"
         exit 1
     }
@@ -101,10 +101,10 @@ def main [
         options: {failByDrop: false}
     } | to json --raw | save --force $autobahn_config
     print $"Starting ($agent_name) on ($host_ip):($server_port)..."
-    let server_job = (job spawn { run-external $server_bin ($server_port | into string) })
+    let server_job = job spawn { run-external $server_bin ($server_port | into string) }
     try {
         sleep 1sec
-        if ((job list | where id == $server_job | length) == 0) {
+        if (job list | where id == $server_job | length) == 0 {
             print --stderr "ERROR: server failed to start"
             exit 1
         }
