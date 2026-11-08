@@ -7,15 +7,16 @@
 
 WebSocket frames and the upgrade handshake in Zig, with no IO and no allocator.
 
-Zig's `std.http.Server` can answer a request and hand the connection to another
-protocol, and nothing in `std` reads a WebSocket frame. A WebSocket library
-usually arrives with a socket, a thread, and an allocator attached. This is the
-frame layer only: you read the bytes, hand them over, and get frames back.
+Zig's `std.http.Server` has a WebSocket type that reads one message at a time
+into its buffer. A message larger than that buffer is `error.MessageOversize`,
+and so is a frame that is not the last of its message; `std.http` has no
+client-side WebSocket at all. A real connection does all three. This is the
+frame layer instead: you hand it the bytes you read, it returns frames, and
+`FrameHandler` assembles a message as the bytes arrive.
 
 `Parser.feed` takes the bytes you already read and returns one event with the
-count it consumed. `FrameHandler` sits above it and reassembles fragments into
-messages. The parser holds a 14-byte header and the handler 125 bytes for a
-control payload. Nothing else.
+count it consumed. `FrameHandler` sits above it. The parser holds a 14-byte
+header and the handler 125 bytes for a control payload. Nothing else.
 
 ## What is in it
 
