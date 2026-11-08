@@ -283,10 +283,12 @@ pub const Mask = struct {
         const Chunk = [vec_len]u8; // ziglint-ignore: Z006
         const ChunkVec = @Vector(vec_len, u8); // ziglint-ignore: Z006
 
-        // Rotate mask to align with offset, then tile to fill the vector.
-        var rotated: MaskKey = undefined;
-        for (0..4) |k| rotated[k] = self.key[(k + self.offset) % 4];
-        const mask_vec: ChunkVec = rotated ** (vec_len / 4);
+        // Rotate the key to the offset and tile it across the vector. The
+        // array form, not `**`, because Zig 0.17 removed array multiplication
+        // and this tree builds on both.
+        var mask_bytes: Chunk = undefined;
+        for (0..vec_len) |k| mask_bytes[k] = self.key[(k + self.offset) % 4];
+        const mask_vec: ChunkVec = @bitCast(mask_bytes);
 
         var i: usize = 0;
         while (payload.len - i >= vec_len) : (i += vec_len) {

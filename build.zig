@@ -29,8 +29,7 @@ pub fn build(b: *std.Build) void {
         .test_runner = test_runner,
     });
     const run_mod_tests = b.addRunArtifact(mod_tests);
-    run_mod_tests.addArg(b.fmt("--seed=0x{x}", .{b.graph.random_seed}));
-    if (b.args) |args| run_mod_tests.addArgs(args);
+    passthruArgs(b, run_mod_tests);
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_mod_tests.step);
 
@@ -51,9 +50,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(echo_server);
 
     const echo_run = b.addRunArtifact(echo_server);
-    if (b.args) |args| {
-        echo_run.addArgs(args);
-    }
+    passthruArgs(b, echo_run);
 
     const echo_step = b.step("echo-server", "Run the Autobahn echo server");
     echo_step.dependOn(&echo_run.step);
@@ -117,7 +114,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(blocking_client);
     examples_step.dependOn(&blocking_client.step);
 
-    const run_autobahn = b.path("scripts/run-autobahn.nu").getPath(b);
+    const run_autobahn = b.path("scripts/run-autobahn.nu");
 
     // The suite leaves the port in TIME_WAIT for a minute after a run, so a
     // second run against the same port fails to bind. Pick another one with
@@ -129,27 +126,20 @@ pub fn build(b: *std.Build) void {
     ) orelse 9002;
     const conformance_port_arg = b.fmt("{d}", .{conformance_port});
 
-    const conformance_script = b.addSystemCommand(&.{
-        "nu",
-        run_autobahn,
-        b.getInstallPath(.bin, "echo-server"),
-        conformance_port_arg,
-        "echo-server",
-        "fast",
-    });
+    const conformance_script = b.addSystemCommand(&.{"nu"});
+    conformance_script.addFileArg(run_autobahn);
+    conformance_script.addArtifactArg(echo_server);
+    conformance_script.addArgs(&.{ conformance_port_arg, "echo-server", "fast" });
+    conformance_script.step.dependOn(&echo_server.step);
     conformance_script.step.dependOn(&b.addInstallArtifact(echo_server, .{}).step);
 
     const conformance_step = b.step("conformance", "Run the fast Autobahn conformance suite");
     conformance_step.dependOn(&conformance_script.step);
 
-    const conformance_full_script = b.addSystemCommand(&.{
-        "nu",
-        run_autobahn,
-        b.getInstallPath(.bin, "echo-server"),
-        conformance_port_arg,
-        "echo-server",
-        "full",
-    });
+    const conformance_full_script = b.addSystemCommand(&.{"nu"});
+    conformance_full_script.addFileArg(run_autobahn);
+    conformance_full_script.addArtifactArg(echo_server);
+    conformance_full_script.addArgs(&.{ conformance_port_arg, "echo-server", "full" });
     conformance_full_script.step.dependOn(&b.addInstallArtifact(echo_server, .{}).step);
 
     const conformance_full_step = b.step(
@@ -158,16 +148,12 @@ pub fn build(b: *std.Build) void {
     );
     conformance_full_step.dependOn(&conformance_full_script.step);
 
-    const run_autobahn_client = b.path("scripts/run-autobahn-client.nu").getPath(b);
+    const run_autobahn_client = b.path("scripts/run-autobahn-client.nu");
 
-    const conformance_client_script = b.addSystemCommand(&.{
-        "nu",
-        run_autobahn_client,
-        b.getInstallPath(.bin, "echo-client"),
-        "9001",
-        "echo-client",
-        "fast",
-    });
+    const conformance_client_script = b.addSystemCommand(&.{"nu"});
+    conformance_client_script.addFileArg(run_autobahn_client);
+    conformance_client_script.addArtifactArg(echo_client);
+    conformance_client_script.addArgs(&.{ "9001", "echo-client", "fast" });
     conformance_client_script.step.dependOn(&b.addInstallArtifact(echo_client, .{}).step);
 
     const conformance_client_step = b.step(
@@ -176,14 +162,10 @@ pub fn build(b: *std.Build) void {
     );
     conformance_client_step.dependOn(&conformance_client_script.step);
 
-    const conformance_client_full_script = b.addSystemCommand(&.{
-        "nu",
-        run_autobahn_client,
-        b.getInstallPath(.bin, "echo-client"),
-        "9001",
-        "echo-client",
-        "full",
-    });
+    const conformance_client_full_script = b.addSystemCommand(&.{"nu"});
+    conformance_client_full_script.addFileArg(run_autobahn_client);
+    conformance_client_full_script.addArtifactArg(echo_client);
+    conformance_client_full_script.addArgs(&.{ "9001", "echo-client", "full" });
     conformance_client_full_script.step.dependOn(&b.addInstallArtifact(echo_client, .{}).step);
 
     const conformance_client_full_step = b.step(
@@ -211,21 +193,17 @@ pub fn build(b: *std.Build) void {
         examples_step.dependOn(&http_echo_install.step);
 
         const http_echo_run = b.addRunArtifact(http_echo);
-        if (b.args) |args| http_echo_run.addArgs(args);
+        passthruArgs(b, http_echo_run);
         const http_echo_step = b.step(
             "example-http",
             "Run the baskingspot/http echo server",
         );
         http_echo_step.dependOn(&http_echo_run.step);
 
-        const http_conformance = b.addSystemCommand(&.{
-            "nu",
-            run_autobahn,
-            b.getInstallPath(.bin, "http-echo"),
-            "9004",
-            "http-echo",
-            "fast",
-        });
+        const http_conformance = b.addSystemCommand(&.{"nu"});
+        http_conformance.addFileArg(run_autobahn);
+        http_conformance.addArtifactArg(http_echo);
+        http_conformance.addArgs(&.{ "9004", "http-echo", "fast" });
         http_conformance.step.dependOn(&http_echo_install.step);
 
         const http_conf_step = b.step(
@@ -251,14 +229,10 @@ pub fn build(b: *std.Build) void {
         const xev_install = b.addInstallArtifact(xev_echo, .{});
         examples_step.dependOn(&xev_install.step);
 
-        const xev_conformance = b.addSystemCommand(&.{
-            "nu",
-            run_autobahn,
-            b.getInstallPath(.bin, "xev-echo"),
-            "9003",
-            "xev-echo",
-            "fast",
-        });
+        const xev_conformance = b.addSystemCommand(&.{"nu"});
+        xev_conformance.addFileArg(run_autobahn);
+        xev_conformance.addArtifactArg(xev_echo);
+        xev_conformance.addArgs(&.{ "9003", "xev-echo", "fast" });
         xev_conformance.step.dependOn(&xev_install.step);
 
         const xev_conf_step = b.step(
@@ -266,5 +240,15 @@ pub fn build(b: *std.Build) void {
             "Run Autobahn against xev echo server",
         );
         xev_conf_step.dependOn(&xev_conformance.step);
+    }
+}
+
+/// Pass the build runner's own arguments through to a run step. Zig 0.17
+/// replaced `Build.args` with `Run.addPassthruArgs`; one tree serves both.
+fn passthruArgs(b: *std.Build, run: *std.Build.Step.Run) void {
+    if (comptime @hasDecl(std.Build.Step.Run, "addPassthruArgs")) {
+        run.addPassthruArgs();
+    } else if (b.args) |args| {
+        run.addArgs(args);
     }
 }
