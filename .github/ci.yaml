@@ -1,5 +1,7 @@
-# One job: `just ci` runs the tests, the lint, the examples, the Autobahn
-# suite, and the site build. Conformance needs the pypy runtime the devshell
-# builds, and it has never been built on macOS.
+# The full gate runs on the default shell, Zig 0.16. The next Zig gets the
+# library and its tests until http publishes a dual-version tag, which is what
+# the two example dependencies need (baskingspot/websocket#6).
 jobs:
   - recipe: ci
+  - recipe: check
+    shell: zig-next

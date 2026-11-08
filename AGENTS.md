@@ -56,8 +56,13 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 
 ## Environment
 
-- Zig 0.16 from the flake, through `baskingspot/nix`'s `zig."0.16"` module.
-  Read the `zig-016` skill before writing Zig here.
+- Zig 0.16 from the default shell, through `baskingspot/nix`'s `zig."0.16"`
+  module. Read the `zig-016` skill before writing Zig here.
+- `nix develop .#zig-next` is Zig 0.17. The build script asks for no dependencies
+  there, because Zig resolves every manifest dependency once any
+  `lazyDependency` call is made, and `http` and the libxev fork build only on
+  0.16. The gate is `old_zig_deps` in `build.zig`, and it goes away when http
+  publishes a dual-version tag (baskingspot/websocket#6).
 - The flake is the environment. A missing tool goes in `flake.nix`; do not
   install it globally.
 - The Autobahn runtime is Python 2 on PyPy, built from a pinned source checkout
@@ -72,6 +77,7 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 
 ```
 just test                    # unit tests
+just check                   # build and test on the shell's own toolchain
 just fmt                     # zig fmt, nufmt, nix fmt, oxfmt, just --fmt
 just lint                    # the checks in `just fmt` plus ziglint and the house rules
 just examples                # build every example

@@ -5,6 +5,14 @@ All notable changes to websocket are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The build script and `Mask.apply` build on Zig 0.17: array multiplication is
+  gone from the hot loop, and `b.args`, `LazyPath.getPath`, and
+  `b.getInstallPath` are replaced by the forms both versions have. The package
+  still requires Zig 0.16, because its two example dependencies do; the
+  `zig-next` devshell runs the tests on 0.17.
+
 ## [0.1.0] - 2026-11-07
 
 ### Added

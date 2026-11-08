@@ -10,6 +10,11 @@ default:
 test:
     zig build test --summary all
 
+[doc("Build and test on the toolchain of the current shell. This is the whole gate for the next Zig, where the examples and their dependencies do not build yet")]
+[group("test")]
+check:
+    zig build test --summary all
+
 [doc("Build every example under examples/")]
 [group("example")]
 examples:

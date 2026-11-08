@@ -17,6 +17,7 @@
         base
         docs
         zig."0.16"
+        zig."0.17"
       ];
 
       perSystem =
@@ -69,40 +70,48 @@
             enableParallelBuilding = true;
             doCheck = false;
           });
+          # Project-specific tools. `just conformance` drives wstest through
+          # nushell scripts; the test scaffolding cImports zlib.h for
+          # permessage-deflate, and the sdist builds in the lock need
+          # pkg-config and libffi.
+          projectTools = with pkgs; [
+            coreutils
+            libffi
+            nufmt
+            nushell
+            openssl_1_1_1w
+            pkg-config
+            pypy
+            python3
+            zlib
+            # ziglint with the target std's doc comments, so the deprecation
+            # rule checks the oldest API surface this repo supports.
+            config.packages."ziglint-0-16"
+          ];
+
+          mkShell =
+            zig-shell:
+            pkgs.mkShell {
+              inputsFrom = [
+                config.devShells.base
+                config.devShells.docs
+                config.devShells.${zig-shell}
+              ];
+              packages = projectTools;
+              shellHook = ''
+                export AUTOBAHN_CHECKOUT_DIR="${autobahn-testsuite}"
+                # pypy's sdist builds read these instead of the shell's flags.
+                unset NIX_CFLAGS_COMPILE
+              '';
+            };
         in
         {
-          devShells.default = pkgs.mkShell {
-            inputsFrom = [
-              config.devShells.base
-              config.devShells.docs
-              config.devShells."zig-0-16"
-            ];
+          devShells.default = mkShell "zig-0-16";
 
-            # Project-specific tools. `just conformance` drives wstest through
-            # nushell scripts; the test scaffolding cImports zlib.h for
-            # permessage-deflate, and the sdist builds in the lock need
-            # pkg-config and libffi.
-            packages = with pkgs; [
-              coreutils
-              libffi
-              nufmt
-              nushell
-              openssl_1_1_1w
-              pkg-config
-              pypy
-              python3
-              zlib
-              # ziglint with the target std's doc comments, so the deprecation
-              # rule checks the oldest API surface this repo supports.
-              config.packages."ziglint-0-16"
-            ];
-
-            shellHook = ''
-              export AUTOBAHN_CHECKOUT_DIR="${autobahn-testsuite}"
-              # pypy's sdist builds read these instead of the shell's flags.
-              unset NIX_CFLAGS_COMPILE
-            '';
-          };
+          # The next Zig, for the compatibility lane. `just check` runs here;
+          # it becomes `default` when http ships a dual-version tag and the
+          # examples can build on 0.17 (baskingspot/websocket#6).
+          devShells.zig-next = mkShell "zig-0-17";
         };
     };
 }
