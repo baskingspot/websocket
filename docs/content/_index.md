@@ -40,8 +40,8 @@ const websocket = b.dependency("websocket", .{ .target = target, .optimize = opt
 exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
-`websocket` builds with Zig 0.16, which is `minimum_zig_version` in
-`build.zig.zon`.
+`websocket` builds with Zig 0.16 and 0.17. The floor is `minimum_zig_version`
+in `build.zig.zon`.
 
 ## Import it
 
@@ -70,10 +70,9 @@ Each example is a complete program:
 | `blocking-client` | The client role against `blocking-echo`.                                                                                   |
 | `http-upgrade`    | A thread per connection with `std.http.Server`, a page on `/`, and an upgrade on `/ws`.                                    |
 | `http-echo`       | The same upgrade through `baskingspot/http`: its HTTP/1 machine parses the request and hands over the bytes past the head. |
-| `xev-echo`        | A completion-based server on libxev with connection pooling.                                                               |
 
-`just examples` builds all five. The libxev and http dependencies are lazy, so
-a project that does not build those examples never fetches them.
+`just examples` builds all four. The http dependency is lazy, so a project
+that does not build `http-echo` never fetches it.
 
 # Frames
 
@@ -295,8 +294,7 @@ just report              # serve the last report at http://127.0.0.1:8080
 ```
 
 The client role has its own profile, `just conformance-client`, which runs the
-echo client against Autobahn's fuzzing server. `just conformance-xev` runs the
-fast profile against the libxev example instead of the blocking echo server.
+echo client against Autobahn's fuzzing server.
 
 The fast profile is in `just ci`. The full profile takes over ten minutes and
 needs about 2 GB of memory, so it runs by hand and not in CI. A pass means the frame layer follows RFC 6455 as Autobahn reads

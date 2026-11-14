@@ -50,13 +50,13 @@ exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
 The package exports `server` and `client` namespaces, so a program imports the
-one for its side of the connection. `websocket` builds with Zig 0.16.
+one for its side of the connection. `websocket` builds with Zig 0.16 and 0.17.
 
 ## Documentation
 
 - The [guide](https://baskingspot.dev/websocket/) says which piece to use at each step of a connection, with the symbols a caller needs.
 - The [API reference](https://baskingspot.dev/websocket/api/) documents every symbol.
-- [`examples/`](examples/) holds five complete programs: a blocking echo server, its client, two HTTP upgrades, and a libxev server.
+- [`examples/`](examples/) holds four complete programs: a blocking echo server, its client, and two HTTP upgrades.
 
 ## Work on it
 

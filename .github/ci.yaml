@@ -1,6 +1,6 @@
-# The full gate runs on the default shell, Zig 0.16. The next Zig gets the
-# library and its tests until http publishes a dual-version tag, which is what
-# the two example dependencies need (baskingspot/websocket#6).
+# The full gate runs on the default shell, Zig 0.16. The next Zig runs the
+# same tests and builds every example, which both shells can do since the
+# http example dependency ships dual-version builds.
 jobs:
   - recipe: ci
   - recipe: check

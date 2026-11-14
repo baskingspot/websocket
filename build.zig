@@ -1,5 +1,4 @@
 const std = @import("std");
-const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -11,25 +10,15 @@ pub fn build(b: *std.Build) void {
     });
 
     // The only exported module. Everything below is developer-only: returning
-    // early for a consumer keeps testingx, libxev, and the test binaries out
-    // of its fetch path.
+    // early for a consumer keeps testingx, http, and the test binaries out of
+    // its fetch path.
     if (b.pkg_hash.len != 0) return;
 
     // testingx provides the test runner and the bench engine. It is lazy
     // because only the root build uses it; a consumer never fetches it. On the
     // first configure pass it is not fetched yet, `lazyDependency` returns
     // null, and the build runner fetches it and reruns this script.
-    // Zig resolves every dependency named in the manifest once any
-    // `lazyDependency` call is made, and http v0.1.0 and the libxev fork build
-    // only on Zig 0.16. Asking for nothing on 0.17 keeps them out of the
-    // build; the tests then run under Zig's own runner. Delete this gate when
-    // http publishes a dual-version tag (baskingspot/websocket#6).
-    const old_zig_deps = comptime builtin.zig_version.minor < 17;
-
-    const testingx_dep = if (old_zig_deps)
-        b.lazyDependency("testingx", .{ .target = target })
-    else
-        null;
+    const testingx_dep = b.lazyDependency("testingx", .{ .target = target });
     const test_runner: ?std.Build.Step.Compile.TestRunner = if (testingx_dep) |dep|
         .{ .path = dep.path("src/runner.zig"), .mode = .simple }
     else
@@ -186,75 +175,42 @@ pub fn build(b: *std.Build) void {
     conformance_client_full_step.dependOn(&conformance_client_full_script.step);
 
     // The interop example: the WebSocket frame layer over the HTTP/1 machine
-    // from baskingspot/http. Lazy, like libxev, so a consumer fetches neither.
-    if (old_zig_deps) {
-        if (b.lazyDependency("http", .{})) |http_dep| {
-            const http_echo = b.addExecutable(.{
-                .name = "http-echo",
-                .root_module = b.createModule(.{
-                    .root_source_file = b.path("examples/http-echo.zig"),
-                    .target = target,
-                    .optimize = optimize,
-                    .imports = &.{
-                        .{ .name = "websocket", .module = mod },
-                        .{ .name = "http", .module = http_dep.module("http") },
-                    },
-                }),
-            });
-            const http_echo_install = b.addInstallArtifact(http_echo, .{});
-            examples_step.dependOn(&http_echo_install.step);
+    // from baskingspot/http. Lazy, so a consumer never fetches it.
+    if (b.lazyDependency("http", .{})) |http_dep| {
+        const http_echo = b.addExecutable(.{
+            .name = "http-echo",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/http-echo.zig"),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "websocket", .module = mod },
+                    .{ .name = "http", .module = http_dep.module("http") },
+                },
+            }),
+        });
+        const http_echo_install = b.addInstallArtifact(http_echo, .{});
+        examples_step.dependOn(&http_echo_install.step);
 
-            const http_echo_run = b.addRunArtifact(http_echo);
-            passthruArgs(b, http_echo_run);
-            const http_echo_step = b.step(
-                "example-http",
-                "Run the baskingspot/http echo server",
-            );
-            http_echo_step.dependOn(&http_echo_run.step);
+        const http_echo_run = b.addRunArtifact(http_echo);
+        passthruArgs(b, http_echo_run);
+        const http_echo_step = b.step(
+            "example-http",
+            "Run the baskingspot/http echo server",
+        );
+        http_echo_step.dependOn(&http_echo_run.step);
 
-            const http_conformance = b.addSystemCommand(&.{"nu"});
-            http_conformance.addFileArg(run_autobahn);
-            http_conformance.addArtifactArg(http_echo);
-            http_conformance.addArgs(&.{ "9004", "http-echo", "fast" });
-            http_conformance.step.dependOn(&http_echo_install.step);
+        const http_conformance = b.addSystemCommand(&.{"nu"});
+        http_conformance.addFileArg(run_autobahn);
+        http_conformance.addArtifactArg(http_echo);
+        http_conformance.addArgs(&.{ "9004", "http-echo", "fast" });
+        http_conformance.step.dependOn(&http_echo_install.step);
 
-            const http_conf_step = b.step(
-                "conformance-http",
-                "Run Autobahn against the baskingspot/http echo server",
-            );
-            http_conf_step.dependOn(&http_conformance.step);
-        }
-    }
-
-    if (old_zig_deps) {
-        if (b.lazyDependency("libxev", .{})) |xev_dep| {
-            const xev_echo = b.addExecutable(.{
-                .name = "xev-echo",
-                .root_module = b.createModule(.{
-                    .root_source_file = b.path("examples/xev-echo.zig"),
-                    .target = target,
-                    .optimize = optimize,
-                    .imports = &.{
-                        .{ .name = "websocket", .module = mod },
-                        .{ .name = "xev", .module = xev_dep.module("xev") },
-                    },
-                }),
-            });
-            const xev_install = b.addInstallArtifact(xev_echo, .{});
-            examples_step.dependOn(&xev_install.step);
-
-            const xev_conformance = b.addSystemCommand(&.{"nu"});
-            xev_conformance.addFileArg(run_autobahn);
-            xev_conformance.addArtifactArg(xev_echo);
-            xev_conformance.addArgs(&.{ "9003", "xev-echo", "fast" });
-            xev_conformance.step.dependOn(&xev_install.step);
-
-            const xev_conf_step = b.step(
-                "conformance-xev",
-                "Run Autobahn against xev echo server",
-            );
-            xev_conf_step.dependOn(&xev_conformance.step);
-        }
+        const http_conf_step = b.step(
+            "conformance-http",
+            "Run Autobahn against the baskingspot/http echo server",
+        );
+        http_conf_step.dependOn(&http_conformance.step);
     }
 }
 

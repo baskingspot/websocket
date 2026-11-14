@@ -7,8 +7,8 @@
         // The HTTP layer the interop example drives. Lazy: only that example
         // imports it, and the library never does.
         .http = .{
-            .url = "https://baskingspot.dev/http/v0.1.0.tar.gz",
-            .hash = "http-0.1.0-bxrZzad8DABlcBcnRJXiua8ORaj2OZYYZh0GUtxBTTOt",
+            .url = "https://baskingspot.dev/http/v0.4.2.tar.gz",
+            .hash = "http-0.4.2-bxrZzWO0EAA0ptYai83GbL45InOpXgHVVLrXZ9mUfqvt",
             .lazy = true,
         },
         // The test runner and the bench engine. Lazy: only the root build
@@ -16,13 +16,6 @@
         .testingx = .{
             .url = "https://baskingspot.dev/testingx/v0.4.0.tar.gz",
             .hash = "testingx-0.4.0-ib95-2JkAwDVM639ma-akYafT4bdewLfpFaAEnLBzQXG",
-            .lazy = true,
-        },
-        .libxev = .{
-            // mattrobenolt fork, zig-0.16 branch: upstream is unmaintained
-            // and has no 0.16 port.
-            .url = "https://github.com/mattrobenolt/libxev/archive/e0da474516d8ab5cdebb908d875fba2139e2e992.tar.gz",
-            .hash = "libxev-0.0.0-86vtc5ehBwDOZaMX_9QpMemn8giO-hXdU4yuJA-9yqcA",
             .lazy = true,
         },
     },

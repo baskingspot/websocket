@@ -10,10 +10,10 @@ default:
 test:
     zig build test --summary all
 
-[doc("Build and test on the toolchain of the current shell. This is the whole gate for the next Zig, where the examples and their dependencies do not build yet")]
+[doc("Build and test on the toolchain of the current shell: the compatibility lane")]
 [group("test")]
 check:
-    zig build test --summary all
+    zig build test examples --summary all
 
 [doc("Build every example under examples/")]
 [group("example")]
@@ -59,11 +59,6 @@ conformance-client: autobahn-setup
 [group("conformance")]
 conformance-client-full: autobahn-setup
     zig build conformance-client-full
-
-[doc("Run the fast Autobahn profile against the libxev example")]
-[group("conformance")]
-conformance-xev: autobahn-setup
-    zig build conformance-xev
 
 [doc("Run the fast Autobahn profile against the baskingspot/http echo server: the HTTP/1 machine hands the connection to this library")]
 [group("conformance")]

@@ -8,8 +8,9 @@
 ///   3. Loop: read bytes → feed to parser → echo back frames.
 ///
 /// This is intentionally simple — single-threaded, one connection at a time,
-/// no production error handling. See the libxev example for an event-driven
-/// approach suitable for handling many connections.
+/// no production error handling. See `http-upgrade.zig` for a thread per
+/// connection, and `http-echo.zig` for the same upgrade through
+/// `baskingspot/http`.
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Io = std.Io;

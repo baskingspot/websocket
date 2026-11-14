@@ -7,11 +7,24 @@ All notable changes to websocket are recorded here. The format follows
 
 ### Changed
 
-- The build script and `Mask.apply` build on Zig 0.17: array multiplication is
-  gone from the hot loop, and `b.args`, `LazyPath.getPath`, and
-  `b.getInstallPath` are replaced by the forms both versions have. The package
-  still requires Zig 0.16, because its two example dependencies do; the
-  `zig-next` devshell runs the tests on 0.17.
+- The package builds on Zig 0.16 and 0.17 from one tree, and a consumer on
+  either version can fetch it. The build script and `Mask.apply` use the forms
+  both versions have: array multiplication is gone from the hot loop, and
+  `b.args`, `LazyPath.getPath`, and `b.getInstallPath` are replaced. The
+  `zig-next` devshell now runs the same tests through testingx as the default
+  shell.
+- The `baskingspot/http` pin moves from v0.1.0 to v0.4.2, the first release
+  that builds on both Zig versions. `examples/http-echo.zig` compiles against
+  it unchanged.
+
+### Removed
+
+- `examples/xev-echo.zig` and the `libxev` dependency behind it. Zig resolves
+  every dependency named in a manifest once any `lazyDependency` call is made,
+  so a lazy dependency with no Zig 0.17 build stops a Zig 0.17 consumer before
+  the root build script runs. A lazy dependency is still a dependency.
+  `examples/` holds four programs, and the frame layer never needed an event
+  loop.
 
 ## [0.1.0] - 2026-11-07
 
