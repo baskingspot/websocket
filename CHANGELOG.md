@@ -5,6 +5,8 @@ All notable changes to websocket are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
 ### Changed
 
 - The package builds on Zig 0.16 and 0.17 from one tree, and a consumer on

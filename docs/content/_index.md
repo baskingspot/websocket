@@ -30,7 +30,7 @@ The [API reference](api/) documents every symbol.
 ## Install
 
 ```sh
-zig fetch --save https://baskingspot.dev/websocket/v0.1.0.tar.gz
+zig fetch --save https://baskingspot.dev/websocket/v0.2.0.tar.gz
 ```
 
 Add the module to `build.zig`:
