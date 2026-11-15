@@ -10,11 +10,10 @@ pub const MaskKey = [4]u8;
 /// Generate a cryptographically random mask key.
 /// RFC 6455 Section 5.3 requires unpredictable keys to prevent proxy cache poisoning.
 ///
-/// std.crypto.random was removed in Zig 0.16; entropy now requires an Io.
-/// The frame-writing API is synchronous and 4 bytes of getrandom per frame
-/// does not justify threading an Io through every caller, so this uses the
-/// global single-threaded instance deliberately (no concurrency needed for
-/// a randomSecure syscall).
+/// Entropy comes from an `Io`. The frame-writing API is synchronous and 4
+/// bytes of getrandom per frame does not justify threading an `Io` through
+/// every caller, so this uses the global single-threaded instance deliberately
+/// (a randomSecure syscall needs no concurrency).
 pub fn generateMaskKey() MaskKey {
     var key: MaskKey = undefined;
     const io = Io.Threaded.global_single_threaded.io();
@@ -123,7 +122,7 @@ pub const Opcode = enum(u4) {
 
     /// Returns true for opcodes 0x8–0xF (control frames: close, ping, pong, and reserved).
     pub fn isControl(self: Opcode) bool {
-        return @intFromEnum(self) >= 0x8;
+        return @backingInt(self) >= 0x8;
     }
 
     /// Returns true for opcodes not defined by RFC 6455 (i.e. not
@@ -185,7 +184,7 @@ pub const FrameHeader = struct {
 
             // Byte 0: FIN(1) | RSV(3) | Opcode(4)
             const rsv_bits: u8 = @as(u3, @bitCast(header.rsv));
-            var byte0: u8 = @intFromEnum(header.opcode) | (rsv_bits << 4);
+            var byte0: u8 = @backingInt(header.opcode) | (rsv_bits << 4);
             if (header.fin) byte0 |= 0x80;
             b.appendAssumeCapacity(byte0);
 
@@ -284,8 +283,7 @@ pub const Mask = struct {
         const ChunkVec = @Vector(vec_len, u8); // ziglint-ignore: Z006
 
         // Rotate the key to the offset and tile it across the vector. The
-        // array form, not `**`, because Zig 0.17 removed array multiplication
-        // and this tree builds on both.
+        // array form, not `**`, because Zig 0.17 removed array multiplication.
         var mask_bytes: Chunk = undefined;
         for (0..vec_len) |k| mask_bytes[k] = self.key[(k + self.offset) % 4];
         const mask_vec: ChunkVec = @bitCast(mask_bytes);
@@ -446,8 +444,8 @@ test "Opcode.isControl" {
 test "Opcode.isReserved" {
     try testing.expect(!Opcode.text.isReserved());
     try testing.expect(!Opcode.close.isReserved());
-    try testing.expect((@as(Opcode, @enumFromInt(0x3))).isReserved());
-    try testing.expect((@as(Opcode, @enumFromInt(0xF))).isReserved());
+    try testing.expect((@as(Opcode, @fromBackingInt(@intCast(0x3)))).isReserved());
+    try testing.expect((@as(Opcode, @fromBackingInt(@intCast(0xF)))).isReserved());
 }
 
 test "FrameHeader.encodedLen" {

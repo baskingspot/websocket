@@ -29,9 +29,20 @@ pub fn build(b: *std.Build) void {
         .test_runner = test_runner,
     });
     const run_mod_tests = b.addRunArtifact(mod_tests);
-    passthruArgs(b, run_mod_tests);
+    run_mod_tests.addPassthruArgs();
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_mod_tests.step);
+
+    // permessage-deflate in the test scaffolding needs zlib. Zig 0.17 has no
+    // `@cImport`, so the build translates `test/zlib.h` and the echo programs
+    // import the result as `c`.
+    const zlib_c = b.addTranslateC(.{
+        .root_source_file = b.path("test/zlib.h"),
+        .target = target,
+        .optimize = optimize,
+    });
+    zlib_c.linkSystemLibrary("zlib", .{ .use_pkg_config = .force });
+    const zlib = zlib_c.createModule();
 
     const echo_server = b.addExecutable(.{
         .name = "echo-server",
@@ -42,15 +53,15 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
             .imports = &.{
                 .{ .name = "websocket", .module = mod },
+                .{ .name = "c", .module = zlib },
             },
         }),
     });
-    echo_server.root_module.linkSystemLibrary("zlib", .{ .use_pkg_config = .force });
 
     b.installArtifact(echo_server);
 
     const echo_run = b.addRunArtifact(echo_server);
-    passthruArgs(b, echo_run);
+    echo_run.addPassthruArgs();
 
     const echo_step = b.step("echo-server", "Run the Autobahn echo server");
     echo_step.dependOn(&echo_run.step);
@@ -64,10 +75,10 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
             .imports = &.{
                 .{ .name = "websocket", .module = mod },
+                .{ .name = "c", .module = zlib },
             },
         }),
     });
-    echo_client.root_module.linkSystemLibrary("zlib", .{ .use_pkg_config = .force });
     b.installArtifact(echo_client);
 
     const examples_step = b.step("examples", "Build all examples");
@@ -193,7 +204,7 @@ pub fn build(b: *std.Build) void {
         examples_step.dependOn(&http_echo_install.step);
 
         const http_echo_run = b.addRunArtifact(http_echo);
-        passthruArgs(b, http_echo_run);
+        http_echo_run.addPassthruArgs();
         const http_echo_step = b.step(
             "example-http",
             "Run the baskingspot/http echo server",
@@ -211,15 +222,5 @@ pub fn build(b: *std.Build) void {
             "Run Autobahn against the baskingspot/http echo server",
         );
         http_conf_step.dependOn(&http_conformance.step);
-    }
-}
-
-/// Pass the build runner's own arguments through to a run step. Zig 0.17
-/// replaced `Build.args` with `Run.addPassthruArgs`; one tree serves both.
-fn passthruArgs(b: *std.Build, run: *std.Build.Step.Run) void {
-    if (comptime @hasDecl(std.Build.Step.Run, "addPassthruArgs")) {
-        run.addPassthruArgs();
-    } else if (b.args) |args| {
-        run.addArgs(args);
     }
 }

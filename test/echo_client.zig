@@ -16,12 +16,12 @@ const print = std.debug.print;
 const ws = @import("websocket").client;
 const DeflateConfig = ws.Extension.DeflateConfig;
 
-const c = @cImport(@cInclude("zlib.h"));
+const c = @import("c");
 
 pub fn main(init: std.process.Init.Minimal) !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = debug_allocator.deinit();
-    const allocator = debug_allocator.allocator();
+    var safe_allocator: std.heap.SafeAllocator = .init(std.heap.page_allocator, .{});
+    defer _ = safe_allocator.deinit();
+    const allocator = safe_allocator.allocator();
 
     var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
     defer threaded.deinit();
@@ -118,7 +118,7 @@ fn runCase(allocator: Allocator, io: Io, port: u16, case_num: u32, agent: []cons
     const writer = &stream_writer.interface;
 
     var path_buf: [256]u8 = undefined;
-    const path = std.fmt.bufPrint(&path_buf, "/runCase?case={d}&agent={s}", .{
+    const path = mem.print(&path_buf, "/runCase?case={d}&agent={s}", .{
         case_num, agent,
     }) catch return error.PathTooLong;
 
@@ -141,7 +141,7 @@ fn updateReports(io: Io, port: u16, agent: []const u8) !void {
     const writer = &stream_writer.interface;
 
     var path_buf: [256]u8 = undefined;
-    const path = std.fmt.bufPrint(&path_buf, "/updateReports?agent={s}", .{agent}) catch
+    const path = mem.print(&path_buf, "/updateReports?agent={s}", .{agent}) catch
         return error.PathTooLong;
 
     _ = try doHandshake(io, reader, writer, port, path, false);
@@ -204,7 +204,7 @@ fn doHandshake(
         "";
 
     var req_buf: [512]u8 = undefined;
-    const req = std.fmt.bufPrint(
+    const req = mem.print(
         &req_buf,
         "GET {s} HTTP/1.1\r\n" ++
             "Host: 127.0.0.1:{d}\r\n" ++
@@ -301,12 +301,12 @@ const ZlibState = struct {
             .client_no_context_takeover = cfg.client_no_context_takeover,
         };
 
-        const inflate_wbits: c_int = @intFromEnum(cfg.server_max_window_bits);
+        const inflate_wbits: c_int = @backingInt(cfg.server_max_window_bits);
         if (c.inflateInit2(&self.inflate_stream, -inflate_wbits) != c.Z_OK)
             return error.ZlibInitFailed;
         errdefer _ = c.inflateEnd(&self.inflate_stream);
 
-        const deflate_wbits: c_int = @intFromEnum(cfg.client_max_window_bits);
+        const deflate_wbits: c_int = @backingInt(cfg.client_max_window_bits);
         if (c.deflateInit2(
             &self.deflate_stream,
             c.Z_DEFAULT_COMPRESSION,

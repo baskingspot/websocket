@@ -21,12 +21,12 @@ const print = std.debug.print;
 const ws = @import("websocket").server;
 const DeflateConfig = ws.Extension.DeflateConfig;
 
-const c = @cImport(@cInclude("zlib.h"));
+const c = @import("c");
 
 pub fn main(init: std.process.Init.Minimal) !void {
-    var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-    defer _ = debug_allocator.deinit();
-    const allocator = debug_allocator.allocator();
+    var safe_allocator: std.heap.SafeAllocator = .init(std.heap.page_allocator, .{});
+    defer _ = safe_allocator.deinit();
+    const allocator = safe_allocator.allocator();
 
     var threaded: Io.Threaded = .init(allocator, .{ .environ = init.environ });
     defer threaded.deinit();
@@ -155,12 +155,12 @@ const ZlibState = struct {
             .server_no_context_takeover = cfg.server_no_context_takeover,
         };
 
-        const client_wbits: c_int = @intFromEnum(cfg.client_max_window_bits);
+        const client_wbits: c_int = @backingInt(cfg.client_max_window_bits);
         if (c.inflateInit2(&self.inflate_stream, -client_wbits) != c.Z_OK)
             return error.ZlibInitFailed;
         errdefer _ = c.inflateEnd(&self.inflate_stream);
 
-        const server_wbits: c_int = @intFromEnum(cfg.server_max_window_bits);
+        const server_wbits: c_int = @backingInt(cfg.server_max_window_bits);
         if (c.deflateInit2(
             &self.deflate_stream,
             c.Z_DEFAULT_COMPRESSION,

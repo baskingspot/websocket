@@ -5,6 +5,13 @@ All notable changes to websocket are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The package requires Zig 0.17. Zig 0.16 support is gone: `minimum_zig_version`
+  is `0.17.0`, the devshell is the 0.17 shell, and the version probes in
+  `build.zig` are replaced by `Run.addPassthruArgs`. The public API and the
+  frame behavior are unchanged.
+
 ## [0.2.0] - 2026-11-14
 
 ### Changed

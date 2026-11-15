@@ -40,7 +40,7 @@ const websocket = b.dependency("websocket", .{ .target = target, .optimize = opt
 exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
-`websocket` builds with Zig 0.16 and 0.17. The floor is `minimum_zig_version`
+`websocket` builds with Zig 0.17. The floor is `minimum_zig_version`
 in `build.zig.zon`.
 
 ## Import it

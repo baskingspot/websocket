@@ -28,7 +28,8 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
   configuration and header writer.
 - `test/echo_server.zig` and `test/echo_client.zig` are scaffolding for the
   Autobahn suite. They are not part of the library, and they link zlib for
-  permessage-deflate.
+  permessage-deflate: `build.zig` translates `test/zlib.h` into the `c` module
+  they import, because Zig 0.17 has no `@cImport`.
 - `examples/` holds four complete programs. `http-echo.zig` is the only one
   that needs a dependency: the lazy `baskingspot/http`, which it drives by hand
   through `h1.ServerConn`. It is the interop the guide points at. The library
@@ -56,12 +57,10 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 
 ## Environment
 
-- Zig 0.16 from the default shell, through `baskingspot/nix`'s `zig."0.16"`
-  module. Read the `zig-016` skill before writing Zig here.
-- `nix develop .#zig-next` is Zig 0.17. Both shells build the library, the
-  tests, and every example; the manifest resolves on both. `http v0.4.2` is
-  the dual-version tag that made that true, and the libxev example was deleted
-  to get there.
+- Zig 0.17 from `nix develop`, through `baskingspot/nix`'s `zig."0.17"`
+  module. Read the `zig-017` skill before writing Zig here. The library, the
+  tests, and every example build on that one toolchain; the manifest's
+  `minimum_zig_version` is `0.17.0`.
 - The flake is the environment. A missing tool goes in `flake.nix`; do not
   install it globally.
 - The Autobahn runtime is Python 2 on PyPy, built from a pinned source checkout
@@ -76,7 +75,7 @@ RFC 6455 frames and the upgrade handshake in Zig, with no IO and no allocator.
 
 ```
 just test                    # unit tests
-just check                   # build and test on the shell's own toolchain, examples included
+just check                   # build and test on the shell's toolchain, examples included
 just fmt                     # zig fmt, nufmt, nix fmt, oxfmt, just --fmt
 just lint                    # the checks in `just fmt` plus ziglint and the house rules
 just examples                # build every example

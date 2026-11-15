@@ -1,7 +1,3 @@
-# The full gate runs on the default shell, Zig 0.16. The next Zig runs the
-# same tests and builds every example, which both shells can do since the
-# http example dependency ships dual-version builds.
+# The full gate runs on the only shell, Zig 0.17.
 jobs:
   - recipe: ci
-  - recipe: check
-    shell: zig-next

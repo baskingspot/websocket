@@ -11,12 +11,12 @@
   outputs =
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      # imports and inputsFrom below mirror each other, including the
-      # toolchain version: pick that once, in the import.
+      # The toolchain version lives here and nowhere else: the module import
+      # provides the shell that inputsFrom below pulls in. This repo is Zig
+      # 0.17 only.
       imports = with inputs.baskingspot.flakeModules; [
         base
         docs
-        zig."0.16"
         zig."0.17"
       ];
 
@@ -85,33 +85,25 @@
             python3
             zlib
             # ziglint with the target std's doc comments, so the deprecation
-            # rule checks the oldest API surface this repo supports.
-            config.packages."ziglint-0-16"
+            # rule checks the oldest API surface this repo supports, which is
+            # 0.17.
+            config.packages."ziglint-0-17"
           ];
-
-          mkShell =
-            zig-shell:
-            pkgs.mkShell {
-              inputsFrom = [
-                config.devShells.base
-                config.devShells.docs
-                config.devShells.${zig-shell}
-              ];
-              packages = projectTools;
-              shellHook = ''
-                export AUTOBAHN_CHECKOUT_DIR="${autobahn-testsuite}"
-                # pypy's sdist builds read these instead of the shell's flags.
-                unset NIX_CFLAGS_COMPILE
-              '';
-            };
         in
         {
-          devShells.default = mkShell "zig-0-16";
-
-          # The next Zig, for the compatibility lane. `just check` runs here;
-          # it becomes `default` when http ships a dual-version tag and the
-          # examples can build on 0.17 (baskingspot/websocket#6).
-          devShells.zig-next = mkShell "zig-0-17";
+          devShells.default = pkgs.mkShell {
+            inputsFrom = [
+              config.devShells.base
+              config.devShells.docs
+              config.devShells."zig-0-17"
+            ];
+            packages = projectTools;
+            shellHook = ''
+              export AUTOBAHN_CHECKOUT_DIR="${autobahn-testsuite}"
+              # pypy's sdist builds read these instead of the shell's flags.
+              unset NIX_CFLAGS_COMPILE
+            '';
+          };
         };
     };
 }

@@ -10,7 +10,7 @@ default:
 test:
     zig build test --summary all
 
-[doc("Build and test on the toolchain of the current shell: the compatibility lane")]
+[doc("Build and test with the shell's toolchain: the unit tests plus every example")]
 [group("test")]
 check:
     zig build test examples --summary all
@@ -71,10 +71,10 @@ report PORT="8080": autobahn-setup
     @echo "http://localhost:{{ PORT }}/index.html"
     python3 -m http.server -d test/autobahn/reports -b 127.0.0.1 {{ PORT }}
 
-[doc("Lint Zig, Nushell, Nix, Markdown, the workflows, and this justfile: ziglint-0-16, the ast-grep house rules, zig fmt, nufmt, nix fmt, oxfmt, actionlint, zizmor, and just --fmt")]
+[doc("Lint Zig, Nushell, Nix, Markdown, the workflows, and this justfile: ziglint-0-17, the ast-grep house rules, zig fmt, nufmt, nix fmt, oxfmt, actionlint, zizmor, and just --fmt")]
 [group("lint")]
 lint:
-    ziglint-0-16
+    ziglint-0-17
     baskingspot-lint src
     zig fmt --check src test examples build.zig build.zig.zon
     nufmt --dry-run --all-recurse

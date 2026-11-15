@@ -2,7 +2,7 @@
     .name = .websocket,
     .version = "0.2.0",
     .fingerprint = 0x42ce80b95e1d4450,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         // The HTTP layer the interop example drives. Lazy: only that example
         // imports it, and the library never does.

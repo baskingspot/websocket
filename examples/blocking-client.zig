@@ -34,7 +34,7 @@ pub fn main(init: std.process.Init) !void {
     _ = std.base64.standard.Encoder.encode(&key_b64, &key_raw);
 
     var req_buf: [256]u8 = undefined;
-    const req = std.fmt.bufPrint(
+    const req = mem.print(
         &req_buf,
         "GET / HTTP/1.1\r\n" ++
             "Host: 127.0.0.1:{d}\r\n" ++

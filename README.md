@@ -50,7 +50,7 @@ exe.root_module.addImport("websocket", websocket.module("websocket"));
 ```
 
 The package exports `server` and `client` namespaces, so a program imports the
-one for its side of the connection. `websocket` builds with Zig 0.16 and 0.17.
+one for its side of the connection. `websocket` builds with Zig 0.17.
 
 ## Documentation
 

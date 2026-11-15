@@ -135,7 +135,7 @@ fn Parser(comptime is_server: bool) type {
 
                     const fin = (byte0 & 0x80) != 0;
                     const rsv: RsvBits = @bitCast(@as(u3, @truncate(byte0 >> 4)));
-                    const opcode: Opcode = @enumFromInt(@as(u4, @truncate(byte0)));
+                    const opcode: Opcode = @fromBackingInt(@intCast(@as(u4, @truncate(byte0))));
                     const masked = (byte1 & 0x80) != 0;
                     const len7: u7 = @truncate(byte1);
 
@@ -1094,7 +1094,7 @@ test "MessageValidator: back to idle after completed fragment" {
 /// Build a masked frame in `out`. Returns the total frame length.
 fn buildMaskedFrame(out: []u8, opcode: Opcode, fin: bool, payload: []const u8) usize {
     const mask_key = [4]u8{ 0x37, 0xFA, 0x21, 0x3D };
-    var byte0: u8 = @intFromEnum(opcode);
+    var byte0: u8 = @backingInt(opcode);
     if (fin) byte0 |= 0x80;
     out[0] = byte0;
     out[1] = 0x80 | @as(u8, @intCast(payload.len));

@@ -24,7 +24,7 @@ pub const CloseCode = enum(u16) {
     /// RFC 6455 Section 7.4: validate whether a close code may appear on the wire.
     /// Codes 1005, 1006, and 1015 are reserved for local use and MUST NOT be sent.
     pub fn isValid(self: CloseCode) bool {
-        const code = @intFromEnum(self);
+        const code = @backingInt(self);
         return switch (code) {
             1000...1003, 1007...1011, 3000...4999 => true,
             else => false,
@@ -34,7 +34,7 @@ pub const CloseCode = enum(u16) {
     /// Encode the status code as two big-endian bytes for a close frame payload.
     pub fn toBytes(self: CloseCode) [2]u8 {
         var buf: [2]u8 = undefined;
-        writeInt(u16, &buf, @intFromEnum(self));
+        writeInt(u16, &buf, @backingInt(self));
         return buf;
     }
 };
@@ -59,7 +59,7 @@ pub fn parseClosePayload(payload: []const u8) ClosePayloadError!?ClosePayload {
     if (payload.len == 0) return null;
     if (payload.len == 1) return error.InvalidClosePayloadLength;
 
-    const code: CloseCode = @enumFromInt(readInt(u16, payload[0..2]));
+    const code: CloseCode = @fromBackingInt(@intCast(readInt(u16, payload[0..2])));
     if (!code.isValid()) return error.InvalidCloseCode;
 
     return .{
@@ -71,7 +71,7 @@ pub fn parseClosePayload(payload: []const u8) ClosePayloadError!?ClosePayload {
 test "CloseCode.isValid: standard valid codes" {
     const valid = [_]u16{ 1000, 1001, 1002, 1003, 1007, 1008, 1009, 1010, 1011 };
     for (valid) |code| {
-        const cc: CloseCode = @enumFromInt(code);
+        const cc: CloseCode = @fromBackingInt(@intCast(code));
         try testing.expect(cc.isValid());
     }
 }
@@ -79,7 +79,7 @@ test "CloseCode.isValid: standard valid codes" {
 test "CloseCode.isValid: application-defined range 3000-4999" {
     const app_codes = [_]u16{ 3000, 3999, 4000, 4999 };
     for (app_codes) |code| {
-        const cc: CloseCode = @enumFromInt(code);
+        const cc: CloseCode = @fromBackingInt(@intCast(code));
         try testing.expect(cc.isValid());
     }
 }
@@ -88,7 +88,7 @@ test "CloseCode.isValid: reserved codes must not appear on wire" {
     // 1004 is reserved, 1005/1006/1015 are for local use only
     const invalid = [_]u16{ 1004, 1005, 1006, 1015 };
     for (invalid) |code| {
-        const cc: CloseCode = @enumFromInt(code);
+        const cc: CloseCode = @fromBackingInt(@intCast(code));
         try testing.expect(!cc.isValid());
     }
 }
@@ -96,7 +96,7 @@ test "CloseCode.isValid: reserved codes must not appear on wire" {
 test "CloseCode.isValid: codes outside defined ranges" {
     const invalid = [_]u16{ 0, 999, 1016, 1099, 1100, 2000, 2999, 5000, 65535 };
     for (invalid) |code| {
-        const cc: CloseCode = @enumFromInt(code);
+        const cc: CloseCode = @fromBackingInt(@intCast(code));
         try testing.expect(!cc.isValid());
     }
 }
@@ -142,7 +142,7 @@ test "parseClosePayload: reserved code 1006 rejected" {
 test "parseClosePayload: application code 3000 accepted" {
     // 3000 = 0x0BB8
     const result = (try parseClosePayload("\x0B\xB8")).?;
-    try testing.expectEqual(@as(CloseCode, @enumFromInt(3000)), result.code);
+    try testing.expectEqual(@as(CloseCode, @fromBackingInt(@intCast(3000))), result.code);
 }
 
 test "parseClosePayload: max payload 123 bytes reason" {
