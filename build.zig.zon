@@ -7,8 +7,8 @@
         // The HTTP layer the interop example drives. Lazy: only that example
         // imports it, and the library never does.
         .http = .{
-            .url = "https://baskingspot.dev/http/v0.4.2.tar.gz",
-            .hash = "http-0.4.2-bxrZzWO0EAA0ptYai83GbL45InOpXgHVVLrXZ9mUfqvt",
+            .url = "https://baskingspot.dev/http/v0.6.0.tar.gz",
+            .hash = "http-0.6.0-bxrZzSkiEgA3QqUpoXMp7qDIyFQQOxM8Kwd-y7BcCT4t",
             .lazy = true,
         },
         // The test runner and the bench engine. Lazy: only the root build
