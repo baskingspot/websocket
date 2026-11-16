@@ -5,6 +5,8 @@ All notable changes to websocket are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
 ### Changed
 
 - The package requires Zig 0.17. Zig 0.16 support is gone: `minimum_zig_version`

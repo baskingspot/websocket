@@ -39,7 +39,7 @@ Not implemented:
 ## Install
 
 ```sh
-zig fetch --save https://baskingspot.dev/websocket/v0.2.0.tar.gz
+zig fetch --save https://baskingspot.dev/websocket/v0.3.0.tar.gz
 ```
 
 Add the module in `build.zig`:
