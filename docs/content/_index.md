@@ -22,6 +22,7 @@ header and the handler 125 bytes for a control payload. Nothing else.
 - [Extensions](#extensions): `Extension` negotiates `permessage-deflate`, claims the RSV1 bit, and marks a written frame `.compressed`.
 - [The upgrade](#the-upgrade): `computeAcceptKey`, `validateUpgradeRequest`, and `UpgradeResponse` cover the WebSocket half of the 101, and the HTTP half is the server's.
 - [Conformance](#conformance): the Autobahn TestSuite runs against the echo server and the echo client, and the fast profile is a CI gate.
+- [Limits](#limits): no UTF-8 validation, no HTTP parsing, no deflate, no subprotocol negotiation, no server or client object, and no socket, thread, timer, or allocator.
 
 The [API reference](api/) documents every symbol.
 
